@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, flash, render_template, request, redirect, url_for
 import database
 import pymongo
 from pymongo import MongoClient
@@ -103,7 +103,64 @@ def update_activity(activity_id):
         return redirect(url_for("get_activity_list"))  # Redirect if activity not found or not owned by user
     return render_template("update_activity.html", activity=activity)
 
+@app.route("/ingredients")
+def get_ingredients():
+    user_id = session.get("user_id")  # Retrieve user ID from session
+    if not user_id:
+        return redirect(url_for("get_index"))  # Redirect to login if not logged in
     
+    # Fetch activities for the logged-in user
+    ingredients = database.retrieve_ingredients()
+    return render_template("ingredients.html", ingredients=ingredients)
+
+@app.route("/create_ingredient", methods=["GET", "POST"])
+def get_post_create_ingredient():
+    if request.method == "POST":
+        new_ingredient = {
+            "name": request.form["name"],   
+            "calories_per_gm": float(request.form["calories_per_gm"]),
+        }
+        database.create_ingredient(new_ingredient)
+        return redirect(url_for("get_ingredients"))
+    return render_template("create_ingredient.html")
+
+@app.route("/update_ingredient/<ingredient_id>", methods=["GET", "POST"])
+def update_ingredient(ingredient_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("get_post_login_user"))
+    
+    if request.method == "POST":
+        updated_ingredient = {
+            "name": request.form["name"],
+            "calories_per_gm": float(request.form["calories_per_gm"]),
+        }
+        database.update_ingredient(ingredient_id, updated_ingredient)    
+        return redirect(url_for("get_ingredients"))
+    
+    # Fetch the activity to pre-fill the form
+    ingredient = database.retrieve_ingredient_by_id(ingredient_id)
+    if not ingredient:
+        return redirect(url_for("get_ingredients"))  # Redirect if activity not found or not owned by user
+    return render_template("update_ingredient.html", ingredient=ingredient)
+
+
+@app.route("/delete_ingredient/<ingredient_id>", methods=["POST"])
+def delete_ingredient(ingredient_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("get_post_login_user"))
+    
+    database.delete_ingredient(ingredient_id)
+    return redirect(url_for("get_ingredients"))
+@app.route("/profile")
+def get_profile():
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("get_post_login_user"))
+    
+    user = database.get_user_by_id(user_id)
+    return render_template("profile.html", user=user)
 
 @app.route("/logout")
 def logout():

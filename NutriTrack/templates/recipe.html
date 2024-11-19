@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipes - Smart Recipe and Fitness Tracker</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h2 class="text-center">Recipes</h2>
+        <div class="text-right mb-3">
+            <a href="/add_recipe" class="btn btn-success">Add Recipe</a>
+        </div>
+        <div class="list-group">
+            <!-- Example recipe item -->
+            <a href="/recipe/{{ recipe.id }}" class="list-group-item list-group-item-action">
+                <h5 class="mb-1">{{ recipe.name }}</h5>
+                <p class="mb-1">{{ recipe.total_calories }} calories</p>
+                <small>Created by: {{ recipe.created_by }}</small>
+            </a>
+            <!-- Repeat similar blocks for other recipes -->
+        </div>
+    </div>
+
+    <br>
+    <a href="/create_recipe">Add New Recipe</a><br>
+    <a href="/activities">My Activities</a><br>
+    <a href="/logout">Home</a>
+</body>
+</html>

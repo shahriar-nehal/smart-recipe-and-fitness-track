@@ -69,3 +69,24 @@ def update_activity(activity_id, updated_data, user_id):
         {"$set": updated_data}
     )
 
+def retrieve_ingredients():
+    ingredients_collection = tracker_db.ingredients
+    ingredients = list(ingredients_collection.find())
+    return ingredients
+def retrieve_ingredient_by_id(ingredient_id):
+    ingredients_collection = tracker_db.ingredients
+    return ingredients_collection.find_one({"_id": ObjectId(ingredient_id)})
+def create_ingredient(data):
+    ingredients_collection = tracker_db.ingredients
+    #data["_id"] = ObjectId(data["_id"])
+    new_ingredient = data
+    ingredients_collection.insert_one(new_ingredient)
+def delete_ingredient(ingredient_id):
+    ingredients_collection = tracker_db.ingredients
+    ingredients_collection.delete_one({"_id": ObjectId(ingredient_id)})
+def update_ingredient(ingredient_id, updated_data):
+    ingredients_collection = tracker_db.ingredients
+    ingredients_collection.update_one(
+        {"_id": ObjectId(ingredient_id)},
+        {"$set": updated_data}  # Replace the existing data with the new data
+    )

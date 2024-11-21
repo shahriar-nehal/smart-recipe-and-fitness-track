@@ -7,6 +7,26 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
 <body>
+    <header class="bg-primary text-white p-3">
+        <h1 class="text-center">Welcome to NutriTrack</h1>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <div class="container-fluid">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item"><a class="nav-link" href="/index">Home</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#recipes">Recipes</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#fitness">Fitness</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/login">Login</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/register">Sign Up</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
     <div class="container mt-5">
         <h2 class="text-center">Recipes</h2>
         <div class="text-right mb-3">
@@ -16,8 +36,13 @@
             <!-- Example recipe item -->
             <a href="/recipe/{{ recipe.id }}" class="list-group-item list-group-item-action">
                 <h5 class="mb-1">{{ recipe.name }}</h5>
+                <p class="mb-1">{{ recipe.instructions }}</p>
                 <p class="mb-1">{{ recipe.total_calories }} calories</p>
                 <small>Created by: {{ recipe.created_by }}</small>
+                <a href="{{ url_for('update_recipe', recipe_id=recipe._id) }}">Update</a>
+            <form action="{{ url_for('delete_recipe', recipe_id=recipe._id) }}" method="POST" style="display:inline;">
+                <button type="submit">Delete</button>
+            </form>
             </a>
             <!-- Repeat similar blocks for other recipes -->
         </div>

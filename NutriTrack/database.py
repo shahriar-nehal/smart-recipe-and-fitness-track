@@ -90,3 +90,25 @@ def update_ingredient(ingredient_id, updated_data):
         {"_id": ObjectId(ingredient_id)},
         {"$set": updated_data}  # Replace the existing data with the new data
     )
+
+def retrieve_recipes():
+    recipes_collection = tracker_db.recipes
+    recipes = list(recipes_collection.find())
+    return recipes
+def retrieve_recipe_by_id(recipe_id):
+    recipes_collection = tracker_db.recipes
+    return recipes_collection.find_one({"_id": ObjectId(recipe_id)})
+def create_recipe(data):
+    recipes_collection = tracker_db.recipes
+    #data["_id"] = ObjectId(data["_id"])
+    new_recipe = data
+    recipes_collection.insert_one(new_recipe)
+def delete_recipe(recipe_id):
+    recipes_collection = tracker_db.recipes
+    recipes_collection.delete_one({"_id": ObjectId(recipe_id)})
+def update_recipe(recipe_id, updated_data): 
+    recipes_collection = tracker_db.recipes
+    recipes_collection.update_one(
+        {"_id": ObjectId(recipe_id)},
+        {"$set": updated_data}  # Replace the existing data with the new data
+    )

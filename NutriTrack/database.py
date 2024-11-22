@@ -22,11 +22,6 @@ def retrieve_activities():
         del activity["_id"]
         # pet["_id"] = ObjectId(pet["id"])
     return activities
-def register_user(username, email, password):
-    users_collection = tracker_db.users
-    new_user = { "username": username, "email": email, "password": password }
-    users_collection.insert_one(new_user)
-    return new_user
 
 def create_user(data):
     users_collection = tracker_db.users
@@ -36,12 +31,13 @@ def create_user(data):
 
 def login_user(email, password):
     users_collection = tracker_db.users
-    user = users_collection.find_one({"email": email, "password": password})
-    if user:
+    user = users_collection.find_one({"email": email})
+    
+    if user and user["password"] == password:
         user["id"] = str(user["_id"])
-        del user["_id"]
         return user
     return None
+
 def retrieve_activities_by_user_id(user_id):
     activities_collection = tracker_db.activities
     activities = list(activities_collection.find({"user_id": user_id}))
@@ -111,4 +107,15 @@ def update_recipe(recipe_id, updated_data):
     recipes_collection.update_one(
         {"_id": ObjectId(recipe_id)},
         {"$set": updated_data}  # Replace the existing data with the new data
+    )
+
+def retrieve_user_by_id(user_id):
+    users_collection = tracker_db.users
+    return users_collection.find_one({"_id": ObjectId(user_id)})
+
+def update_user(user_id, updated_data):
+    users_collection = tracker_db.users
+    users_collection.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": updated_data}
     )

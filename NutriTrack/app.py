@@ -5,6 +5,8 @@ from bson.objectid import ObjectId
 import pymongo
 from pymongo import MongoClient
 from flask import session
+from werkzeug.security import generate_password_hash
+
 app = Flask(__name__)
 app.secret_key = "123456"  # Replace with a strong secret key
 
@@ -43,17 +45,39 @@ def get_post_create_activity():
     return render_template("create_activity.html")
 
 # Get, Post, Register user
-@app.route("/register", methods=["GET", "POST"])
-def get_post_register_user():
-    if request.method == "POST":
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        email = request.form['email']
+        password = request.form['password']
+        height = float(request.form['height'])
+        weight = float(request.form['weight'])
+        target_weight = float(request.form['target_weight'])
+
+        # Calculate BMI
+        bmi = weight / ((height / 100) ** 2)
+
+        # Hash the password (you can use werkzeug.security for this)
+        #hashed_password = generate_password_hash(password, method='sha256')
+
+        # Create a new user document
         new_user = {
-            "username": request.form["username"],
-            "email": request.form["email"],
-            "password": request.form["password"]
+            'username': username,
+            'email': email,
+            'password': password,
+            'height': height,
+            'weight': weight,
+            'bmi': bmi,
+            'target_weight': target_weight
         }
+
+        # Insert the new user into the database
         database.create_user(new_user)        
         return redirect(url_for("get_index"))
-    return render_template("register.html")
+
+    return render_template('register.html')
+
 
 # Get, Post, Login user
 @app.route("/login", methods=["GET", "POST"])
@@ -68,12 +92,14 @@ def get_post_login_user():
         
         user = database.login_user(email, password)
         if user:
-            session["user_id"] = user["id"]  # Store user ID in session
-            return redirect(url_for("get_activity_list"))
+            session["user_id"] = str(user["_id"])  # Store user ID in session
+            session["username"] = user["username"]  # Store username in session
+            return redirect(url_for("get_index"))
         else:
             error = "Invalid email or password"
             return render_template("login.html", error=error)
     return render_template("login.html")
+
 @app.route("/delete_activity/<activity_id>", methods=["POST"])
 def delete_activity(activity_id):
     user_id = session.get("user_id")
@@ -269,8 +295,50 @@ def get_profile():
     if not user_id:
         return redirect(url_for("get_post_login_user"))
     
-    user = database.get_user_by_id(user_id)
+    user = database.retrieve_user_by_id(user_id)
     return render_template("profile.html", user=user)
+@app.route('/update_profile', methods=['GET', 'POST'])
+def update_profile():
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('get_post_login_user'))
+
+    user = database.retrieve_user_by_id(user_id)
+    if not user:
+        return redirect(url_for('get_post_login_user'))
+
+    if request.method == 'POST':
+        height = float(request.form['height'])
+        weight = float(request.form['weight'])
+        target_weight = float(request.form['target_weight'])
+
+        # Calculate BMI
+        bmi = weight / ((height / 100) ** 2)
+
+        # Update user profile
+        updated_profile = {
+            'height': height,
+            'weight': weight,
+            'bmi': bmi,
+            'target_weight': target_weight
+        }
+        database.update_user(user_id, updated_profile)
+        return redirect(url_for('get_profile'))
+
+    return render_template('update_profile.html', user=user)
+
+
+@app.route('/dashboard')
+def dashboard():
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('get_post_login_user'))
+
+    user = database.retrieve_user_by_id(user_id)
+    if not user:
+        return redirect(url_for('get_post_login_user'))
+
+    return render_template('dashboard.html', user=user)
 
 @app.route("/logout")
 def logout():

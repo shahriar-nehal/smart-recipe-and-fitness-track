@@ -1,8 +1,10 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>List of activities</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile - NutriTrack</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
 <body>
     <header class="bg-primary text-white p-3">
@@ -31,38 +33,23 @@
             </div>
         </nav>
     </header>
-    <h1>List of activities</h1>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Type</th>
-                <th>Duration</th>
-                <th>Calorie Burn</th>
-                <th>Date</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for activity in activities %}
-            <tr>
-                <td>{{ activity.type }}</td>
-                <td>{{ activity.duration }}</td>
-                <td>{{ activity.calories_burned }}</td>
-                <td>{{ activity.date }}</td>
-                <td>
-                    <form action="{{ url_for('delete_activity', activity_id=activity['_id']) }}" method="POST" style="display: inline;">
-                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                    </form>
-                    <a href="{{ url_for('update_activity', activity_id=activity['_id']) }}" class="btn btn-warning btn-sm">Edit</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    
-    <br>
-    <a href="/create_activity">Add New Activity</a><br>
-    <a href="/logout">Home</a>
-    
+    <div class="container mt-5">
+        <h2 class="text-center">User Profile</h2>
+        <div class="card">
+            <div class="card-body">
+                <h3>{{ user.username }}</h3>
+                <p><strong>Email:</strong> {{ user.email }}</p>
+                <p><strong>Height:</strong> {{ user.height }} cm</p>
+                <p><strong>Weight:</strong> {{ user.weight }} kg</p>
+                <p><strong>Target Weight:</strong> {{ user.target_weight }} kg</p>
+                <a href="/update_profile" class="btn btn-warning">Edit Profile</a>
+            </div>
+        </div>
+    </div>
+    <footer class="bg-light text-center p-3 mt-5">
+        <p>&copy; 2023 NutriTrack. All rights reserved.</p>
+    </footer>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js" integrity="sha384-oBqDVmMz2pq8RkM0QqFtfGVSAPJ7An1Uj+1p1T0C7b7jP07p1zVv7gW6J8J/s3vT" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous"></script>
 </body>
 </html>

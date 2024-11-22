@@ -17,33 +17,6 @@ app.secret_key = "123456"  # Replace with a strong secret key
 def get_index():
     return render_template("index.html")
 
-
-@app.route("/activities")
-def get_activity_list():
-    user_id = session.get("user_id")  # Retrieve user ID from session
-    if not user_id:
-        return redirect(url_for("get_index"))  # Redirect to login if not logged in
-    
-    # Fetch activities for the logged-in user
-    activities = database.retrieve_activities_by_user_id(user_id)
-    return render_template("activities.html", activities=activities)
-
-
-# Get, Post, Create activity
-@app.route("/create_activity", methods=["GET", "POST"])
-def get_post_create_activity():
-    if request.method == "POST":
-        new_activity = {
-            "user_id": session.get("user_id"),
-            "type": request.form["type"],
-            "duration": int(request.form["duration"]),
-            "calories_burned": int(request.form["calories_burned"]),
-            "date": request.form["date"]
-        }
-        database.create_activity(new_activity)
-        return redirect(url_for("get_activity_list"))
-    return render_template("create_activity.html")
-
 # Get, Post, Register user
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -99,18 +72,42 @@ def get_post_login_user():
             error = "Invalid email or password"
             return render_template("login.html", error=error)
     return render_template("login.html")
+@app.route("/activity_log")
+def get_activity_log_list():
+    user_id = session.get("user_id")  # Retrieve user ID from session
+    if not user_id:
+        return redirect(url_for("get_index"))  # Redirect to login if not logged in
+    
+    # Fetch activities for the logged-in user
+    activities = database.retrieve_activities_by_user_id(user_id)
+    return render_template("activity_log.html", activities=activities)
 
-@app.route("/delete_activity/<activity_id>", methods=["POST"])
-def delete_activity(activity_id):
+# Get, Post, Create activity
+@app.route("/create_activity_log", methods=["GET", "POST"])
+def get_post_create_activity_log():
+    if request.method == "POST":
+        new_activity = {
+            "user_id": session.get("user_id"),
+            "type": request.form["type"],
+            "duration": int(request.form["duration"]),
+            "calories_burned": int(request.form["calories_burned"]),
+            "date": request.form["date"]
+        }
+        database.create_activity_log(new_activity)
+        return redirect(url_for("get_activity_log_list"))
+    return render_template("create_activity_log.html")
+
+@app.route("/delete_activity_log/<activity_id>", methods=["POST"])
+def delete_activity_log(activity_id):
     user_id = session.get("user_id")
     if not user_id:
         return redirect(url_for("get_post_login_user"))
     
-    database.delete_activity(activity_id, user_id)
-    return redirect(url_for("get_activity_list"))
+    database.delete_activity_log(activity_id, user_id)
+    return redirect(url_for("get_activity_log_list"))
 
-@app.route("/update_activity/<activity_id>", methods=["GET", "POST"])
-def update_activity(activity_id):
+@app.route("/update_activity_log/<activity_id>", methods=["GET", "POST"])
+def update_activity_log(activity_id):
     user_id = session.get("user_id")
     if not user_id:
         return redirect(url_for("get_post_login_user"))
@@ -122,14 +119,63 @@ def update_activity(activity_id):
             "calories_burned": int(request.form["calories_burned"]),
             "date": request.form["date"]
         }
-        database.update_activity(activity_id, updated_activity, user_id)
+        database.update_activity_log(activity_id, updated_activity, user_id)
+        return redirect(url_for("get_activity_log_list"))
+    
+    # Fetch the activity to pre-fill the form
+    activity = database.get_activity_log_by_id(activity_id, user_id)
+    if not activity:
+        return redirect(url_for("get_activity_log_list"))  # Redirect if activity not found or not owned by user
+    return render_template("update_activity.html", activity=activity)
+
+@app.route("/activities")
+def get_activity_list():
+    user_id = session.get("user_id")  # Retrieve user ID from session
+    if not user_id:
+        return redirect(url_for("get_index"))  # Redirect to login if not logged in
+    
+    # Fetch activities for the logged-in user
+    activities = database.retrieve_activities()
+    return render_template("activities.html", activities=activities)
+@app.route("/create_activity", methods=["GET", "POST"])
+def get_post_create_activity():
+    if request.method == "POST":
+        new_activity = {
+            "name": request.form["type"],
+            "met_value": float(request.form["met_value"]),
+        }
+        database.create_activity(new_activity)
+        return redirect(url_for("get_activity_list"))
+    return render_template("create_activity.html")
+
+@app.route("/update_activity/<activity_id>", methods=["GET", "POST"])
+def update_activity(activity_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("get_post_login_user"))
+    
+    if request.method == "POST":
+        updated_activity = {
+            "name": request.form["name"],
+            "met_value": float(request.form["met_value"]),
+        }
+        database.update_activity(activity_id, updated_activity)
         return redirect(url_for("get_activity_list"))
     
     # Fetch the activity to pre-fill the form
-    activity = database.get_activity_by_id(activity_id, user_id)
+    activity = database.get_activity_by_id(activity_id)
     if not activity:
         return redirect(url_for("get_activity_list"))  # Redirect if activity not found or not owned by user
     return render_template("update_activity.html", activity=activity)
+
+@app.route("/delete_activity/<activity_id>", methods=["POST"])
+def delete_activity(activity_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("get_post_login_user"))
+    
+    database.delete_activity(activity_id)
+    return redirect(url_for("get_activity_list"))
 
 @app.route("/ingredients")
 def get_ingredients():

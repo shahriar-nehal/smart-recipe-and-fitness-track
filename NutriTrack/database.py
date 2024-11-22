@@ -43,25 +43,47 @@ def retrieve_activities_by_user_id(user_id):
     activities = list(activities_collection.find({"user_id": user_id}))
     return activities
 
+def create_activity_log(data):
+    activities_collection = tracker_db.activities
+    #data["_id"] = ObjectId(data["_id"])
+    new_activity = data
+    activities_collection.insert_one(new_activity)
+
+def delete_activity_log(activity_id, user_id):
+    activities_collection = tracker_db.activities
+    # Ensure the user can only delete their own activities
+    activities_collection.delete_one({"_id": ObjectId(activity_id), "user_id": user_id})
+
+def get_activity_log_by_id(activity_id, user_id):
+    activities_collection = tracker_db.activities
+    return activities_collection.find_one({"_id": ObjectId(activity_id), "user_id": user_id})
+
+def update_activity_log(activity_id, updated_data, user_id):
+    activities_collection = tracker_db.activities
+    activities_collection.update_one(
+        {"_id": ObjectId(activity_id), "user_id": user_id},
+        {"$set": updated_data}
+    )
+
 def create_activity(data):
     activities_collection = tracker_db.activities
     #data["_id"] = ObjectId(data["_id"])
     new_activity = data
     activities_collection.insert_one(new_activity)
 
-def delete_activity(activity_id, user_id):
+def delete_activity(activity_id):
     activities_collection = tracker_db.activities
     # Ensure the user can only delete their own activities
-    activities_collection.delete_one({"_id": ObjectId(activity_id), "user_id": user_id})
+    activities_collection.delete_one({"_id": ObjectId(activity_id)})
 
-def get_activity_by_id(activity_id, user_id):
+def get_activity_by_id(activity_id):
     activities_collection = tracker_db.activities
-    return activities_collection.find_one({"_id": ObjectId(activity_id), "user_id": user_id})
+    return activities_collection.find_one({"_id": ObjectId(activity_id)})
 
-def update_activity(activity_id, updated_data, user_id):
+def update_activity(activity_id, updated_data):
     activities_collection = tracker_db.activities
     activities_collection.update_one(
-        {"_id": ObjectId(activity_id), "user_id": user_id},
+        {"_id": ObjectId(activity_id)},
         {"$set": updated_data}
     )
 

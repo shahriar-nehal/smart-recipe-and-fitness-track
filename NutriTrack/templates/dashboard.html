@@ -1,70 +1,81 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/5.3.3/css/bootstrap.min.css">
-</head>
-<body>
-    <header class="bg-primary text-white p-3">
-        <h1 class="text-center">Dashboard</h1>
-        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-            <div class="container-fluid">
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav">
-                        <li class="nav-item"><a class="nav-link" href="/index">Home</a></li>
-                        <li class="nav-item"><a class="nav-link" href="/profile">{{ session['username'] }}</a></li>
-                        <li class="nav-item"><a class="nav-link" href="/logout">Logout</a></li>
-                    </ul>
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4">Dashboard</h1>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Welcome, {{ session['username'] }}!</h5>
+                    <p class="card-text">Here's a quick overview of your progress and activities.</p>
                 </div>
             </div>
-        </nav>
-    </header>
-    <main class="container mt-5">
-        <section id="overview" class="mb-5">
-            <h2>Overview</h2>
-            <p>Welcome back, {{ session['username'] }}! Here’s a quick summary of your activities and progress.</p>
-            <!-- Insert summary statistics here, such as total activities, meals logged, weight change, etc. -->
-        </section>
-        <section id="activities" class="mb-5">
-            <h2>Your Activities</h2>
-            <!-- Activities content here -->
-            <p>Log and review your daily activities to stay on track with your fitness goals.</p>
-            <a href="/activities" class="btn btn-primary">Manage Activities</a>
-        </section>
-        <section id="meal-log" class="mb-5">
-            <h2>Your Meal Log</h2>
-            <!-- Meal log content here -->
-            <p>Keep track of your meals and nutrition intake.</p>
-            <a href="/meal-log" class="btn btn-primary">Manage Meal Log</a>
-        </section>
-        <section id="progress-report" class="mb-5">
-            <h2>Your Progress Report</h2>
-            <!-- Progress report content here -->
-            <p>Monitor your progress over time with detailed reports and charts.</p>
-            <a href="/progress-report" class="btn btn-primary">View Progress Report</a>
-        </section>
-        <section id="recipes" class="mb-5">
-            <h2>Recipes</h2>
-            <!-- Recipes content here -->
-            <p>Explore and manage your favorite recipes.</p>
-            <a href="/recipes" class="btn btn-primary">View Recipes</a>
-        </section>
-        <section id="ingredients" class="mb-5">
-            <h2>Ingredients</h2>
-            <!-- Ingredients content here -->
-            <p>Manage your ingredients and nutritional information.</p>
-            <a href="/ingredients" class="btn btn-primary">Manage Ingredients</a>
-        </section>
-    </main>
-    <footer class="bg-light text-center p-3">
-        <p>&copy; 2023 NutriTrack. All rights reserved.</p>
-    </footer>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js" integrity="sha384-oBqDVmMz2pq8RkM0QqFtfGVSAPJ7An1Uj+1p1T0C7b7jP07p1zVv7gW6J8J/s3vT" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous"></script>
-</body>
-</html>
+        </div>
+        <div class="col-md-8">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Activities</h5>
+                            <p class="card-text">Log and review your daily activities.</p>
+                            <a href="/activities" class="btn btn-primary">Manage Activities</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Meal Log</h5>
+                            <p class="card-text">Keep track of your meals and nutrition intake.</p>
+                            <a href="/meal-log" class="btn btn-primary">Manage Meal Log</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Progress Report</h5>
+                            <p class="card-text">Monitor your progress with detailed reports and charts.</p>
+                            <a href="/progress-report" class="btn btn-primary">View Progress Report</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Recipes</h5>
+                            <p class="card-text">Explore and manage your favorite recipes.</p>
+                            <a href="/recipes" class="btn btn-primary">View Recipes</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Ingredients</h5>
+                            <p class="card-text">Manage your ingredients and nutritional information.</p>
+                            <a href="/ingredients" class="btn btn-primary">Manage Ingredients</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Settings</h5>
+                            <p class="card-text">Adjust your account and profile settings.</p>
+                            <a href="/settings" class="btn btn-primary">Account Settings</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

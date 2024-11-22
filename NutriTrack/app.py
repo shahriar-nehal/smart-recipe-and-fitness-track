@@ -1,5 +1,7 @@
+import datetime
 from flask import Flask, flash, render_template, request, redirect, url_for
 import database
+from bson.objectid import ObjectId
 import pymongo
 from pymongo import MongoClient
 from flask import session
@@ -117,7 +119,7 @@ def get_ingredients():
 def get_post_create_ingredient():
     if request.method == "POST":
         new_ingredient = {
-            "name": request.form["name"],   
+            "name": request.form["name"],
             "calories_per_gm": float(request.form["calories_per_gm"]),
         }
         database.create_ingredient(new_ingredient)
@@ -155,81 +157,111 @@ def delete_ingredient(ingredient_id):
     return redirect(url_for("get_ingredients"))
 
 @app.route("/recipes")
-def view_recipes():
+def get_recipes():
     user_id = session.get("user_id")
     if not user_id:
         return redirect(url_for("get_post_login_user"))
+    
     recipes = database.retrieve_recipes()
+    ingredients = database.retrieve_ingredients()
+
+    # Convert _id to string for Jinja2 compatibility
+    ingredient_lookup = {str(ingredient["_id"]): ingredient["name"] for ingredient in ingredients}
+    for recipe in recipes:
+        for ingredient in recipe.get("ingredients", []):
+            ingredient_obj_id = str(ingredient["ingredient_id"])
+            ingredient["name"] = ingredient_lookup.get(ingredient_obj_id, "Unknown Ingredient")
+    
     return render_template("recipes.html", recipes=recipes)
 
+# Route: Create Recipe
 @app.route("/create_recipe", methods=["GET", "POST"])
 def create_recipe():
-    user_id = session.get("user_id")
-    if not user_id:
-        return redirect(url_for("get_post_login_user"))
-    
     if request.method == "POST":
         name = request.form["name"]
         instructions = request.form["instructions"]
-        total_calories = float(request.form["total_calories"])
-        ingredients = []
-        for i in range(len(request.form.getlist("ingredient_id"))):
-            ingredients.append({
-                "ingredient_id": int(request.form.getlist("ingredient_id")[i]),
-                "quantity": int(request.form.getlist("quantity")[i])
-            })
-        new_recipe = {
-            "name": name,
-            "ingredients": ingredients,
-            "instructions": instructions,
-            "total_calories": total_calories,
-            "created_by": user_id
-        }
-        database.create_recipe(new_recipe)
-        return redirect(url_for("view_recipes"))
-    
-    all_ingredients = database.retrieve_ingredients()
-    return render_template("create_recipe.html", ingredients=all_ingredients)
+        ingredient_ids = request.form.getlist("ingredient_ids[]")
+        ingredient_quantities = request.form.getlist("ingredient_quantities[]")
 
+        total_calories = float(request.form["total_calories"])
+
+        # Prepare ingredients list
+        formatted_ingredients = [
+            {
+                "ingredient_id": ObjectId(ingredient_id),
+                "quantity": float(quantity),
+            }
+            for ingredient_id, quantity in zip(ingredient_ids, ingredient_quantities)
+        ]
+
+        recipe = {
+            "name": name,
+            "instructions": instructions,
+            "ingredients": formatted_ingredients,
+            "total_calories": total_calories,
+            "created_by": session["user_id"],
+        }
+        database.create_recipe(recipe)
+        return redirect(url_for("get_recipes"))
+
+    # Convert _id to string for Jinja2
+    ingredients = database.retrieve_ingredients()
+    for ingredient in ingredients:
+        ingredient["_id"] = str(ingredient["_id"])
+
+    return render_template("create_recipe.html", ingredients=ingredients)
+
+
+# Route: Update Recipe
 @app.route("/update_recipe/<recipe_id>", methods=["GET", "POST"])
 def update_recipe(recipe_id):
-    user_id = session.get("user_id")
-    if not user_id:
-        return redirect(url_for("get_post_login_user"))
-    
     if request.method == "POST":
         name = request.form["name"]
         instructions = request.form["instructions"]
+        ingredient_ids = request.form.getlist("ingredient_ids[]")
+        ingredient_quantities = request.form.getlist("ingredient_quantities[]")
+
         total_calories = float(request.form["total_calories"])
-        ingredients = []
-        for i in range(len(request.form.getlist("ingredient_id"))):
-            ingredients.append({
-                "ingredient_id": int(request.form.getlist("ingredient_id")[i]),
-                "quantity": int(request.form.getlist("quantity")[i])
-            })
+
+        # Prepare ingredients list
+        formatted_ingredients = [
+            {
+                "ingredient_id": ObjectId(ingredient_id),
+                "quantity": float(quantity),
+            }
+            for ingredient_id, quantity in zip(ingredient_ids, ingredient_quantities)
+        ]
+
+        # Update the recipe
         updated_recipe = {
             "name": name,
-            "ingredients": ingredients,
             "instructions": instructions,
+            "ingredients": formatted_ingredients,
             "total_calories": total_calories,
+            "created_by": session["user_id"],
         }
-        database.update_recipe(recipe_id, updated_recipe)
-        return redirect(url_for("view_recipes"))
-    
-    recipe = database.retrieve_recipe_by_id(recipe_id)
-    if not recipe:
-        return redirect(url_for("view_recipes"))
-    all_ingredients = database.retrieve_ingredients()
-    return render_template("update_recipe.html", recipe=recipe, ingredients=all_ingredients)
 
-@app.route("/delete_recipe/<recipe_id>", methods=["POST"])
+        database.update_recipe(recipe_id, updated_recipe)
+        return redirect(url_for("get_recipes"))
+
+    # Get the recipe and ingredients from the database
+    recipe = database.retrieve_recipe_by_id(ObjectId(recipe_id))
+    ingredients = database.retrieve_ingredients()
+
+    # Convert ObjectId to string for JSON serialization
+    recipe["_id"] = str(recipe["_id"])
+    for ingredient in recipe["ingredients"]:
+        ingredient["ingredient_id"] = str(ingredient["ingredient_id"])
+    for ingredient in ingredients:
+        ingredient["_id"] = str(ingredient["_id"])
+
+    return render_template("update_recipe.html", recipe=recipe, ingredients=ingredients)
+
+# Route: Delete Recipe
+@app.route("/delete_recipe/<recipe_id>")
 def delete_recipe(recipe_id):
-    user_id = session.get("user_id")
-    if not user_id:
-        return redirect(url_for("get_post_login_user"))
-    
     database.delete_recipe(recipe_id)
-    return redirect(url_for("view_recipes"))
+    return redirect(url_for("get_recipes"))
 
 @app.route("/profile")
 def get_profile():

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipes</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Recipes</h1>
+        <a href="{{ url_for('create_recipe') }}" class="btn btn-primary mb-3">Create Recipe</a>
+        {% for recipe in recipes %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <h3>{{ recipe.name }}</h3>
+                <p>{{ recipe.instructions }}</p>
+                <p><strong>Total Calories:</strong> {{ recipe.total_calories }}</p>
+                <h5>Ingredients:</h5>
+                <ul>
+                    {% for ingredient in recipe.ingredients %}
+                        <li>{{ ingredient.name }} - {{ ingredient.quantity }}g</li>
+                    {% endfor %}
+                </ul>
+                <a href="{{ url_for('update_recipe', recipe_id=recipe._id) }}" class="btn btn-warning">Edit</a>
+                <a href="{{ url_for('delete_recipe', recipe_id=recipe._id) }}" class="btn btn-danger">Delete</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>

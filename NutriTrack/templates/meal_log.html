@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Activity Logs{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Activity Logs</h1>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th scope="col">Meal Name</th>
+                <th scope="col">Calories Intake</th>
+                <th scope="col">Date</th>
+                <th scope="col">Time</th>
+                <th scope="col">Meal Type</th>
+                <th scope="col">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in meal_logs %}
+            <tr>
+                <td>{{ log.meal_name }}</td>
+                <td>{{ log.calories_intake }}</td>
+                <td>{{ log.date }}</td>
+                <td>{{ log.time }}</td>
+                <td>{{ log.meal_type }}</td>
+                <td>
+                    <form action="{{ url_for('delete_meal_log', log_id=log['_id']) }}" method="POST" style="display: inline;">
+                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                    </form>
+                    <a href="{{ url_for('update_meal_log', log_id=log['_id']) }}" class="btn btn-warning btn-sm">Edit</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <a href="/create_meal_log" class="btn btn-primary mt-3">Log New Meal</a>
+</div>
+{% endblock %}

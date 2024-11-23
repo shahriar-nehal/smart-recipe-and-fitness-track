@@ -26,6 +26,8 @@ def register():
         username = request.form['username']
         email = request.form['email']
         password = request.form['password']
+        gender = request.form['gender']
+        dob = request.form['dob']
         height = float(request.form['height'])
         weight = float(request.form['weight'])
         target_weight = float(request.form['target_weight'])
@@ -41,6 +43,8 @@ def register():
             'username': username,
             'email': email,
             'password': password,
+            'gender': gender,
+            'dob': dob,
             'height': height,
             'weight': weight,
             'bmi': bmi,
@@ -53,6 +57,47 @@ def register():
 
     return render_template('register.html')
 
+@app.route("/profile")
+def get_profile():
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("get_post_login_user"))
+    
+    user = database.retrieve_user_by_id(user_id)
+    return render_template("profile.html", user=user)
+@app.route('/update_profile', methods=['GET', 'POST'])
+def update_profile():
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('get_post_login_user'))
+
+    user = database.retrieve_user_by_id(user_id)
+    if not user:
+        return redirect(url_for('get_post_login_user'))
+
+    if request.method == 'POST':
+        height = float(request.form['height'])
+        weight = float(request.form['weight'])
+        target_weight = float(request.form['target_weight'])
+
+        # Calculate BMI
+        bmi = weight / ((height / 100) ** 2)
+
+        # Update user profile
+        updated_profile = {
+            'email': user['email'],
+            'password': user['password'],
+            'dob': user['dob'],
+            'gender': user['gender'],
+            'height': height,
+            'weight': weight,
+            'bmi': bmi,
+            'target_weight': target_weight
+        }
+        database.update_user(user_id, updated_profile)
+        return redirect(url_for('get_profile'))
+
+    return render_template('update_profile.html', user=user)
 
 # Get, Post, Login user
 @app.route("/login", methods=["GET", "POST"])
@@ -94,6 +139,8 @@ def get_post_create_activity_log():
     if request.method == "POST":
         activity_id = request.form.get("activity_id")
         duration = request.form.get("duration")
+        date = request.form.get("date")
+        time = request.form.get("time")
 
         # Validate inputs
         if not activity_id or not duration:
@@ -136,7 +183,10 @@ def get_post_create_activity_log():
             "activity_id": str(activity_id),
             "duration": duration,
             "calories_burned": calories_burned,
+            "date": date,
+            "time":time,
             "activity_name": activity["name"],
+            "bmi": bmi,
         }
         database.create_activity_log(new_activity_log)
         flash("Activity log created successfully!", "success")
@@ -157,10 +207,21 @@ def update_activity_log(log_id):
         activity_id = request.form["activity_id"]
         duration = float(request.form["duration"])
 
+        # Validate activity_id
+        from bson import ObjectId, errors
+        try:
+            activity = database.get_activity_by_id(ObjectId(activity_id))
+        except errors.InvalidId:
+            flash("Invalid activity selection!", "error")
+            return redirect(url_for("update_activity_log", log_id=log_id))
+
+        if not activity:
+            flash("Selected activity does not exist!", "error")
+            return redirect(url_for("update_activity_log", log_id=log_id))
+
         # Recalculate calories burned
         user = database.retrieve_user_by_id(user_id)
         weight_kg = user.get("weight")
-        activity = database.get_activity_by_id(activity_id)
         met_value = activity["met_value"]
         calories_burned = met_value * weight_kg * (duration / 60)
 
@@ -168,13 +229,18 @@ def update_activity_log(log_id):
             "activity_id": activity_id,
             "duration": duration,
             "calories_burned": calories_burned,
+            "date": request.form["date"],
+            "time": request.form["time"],
+            "activity_name": activity["name"],
+            "bmi": user.get("bmi"),
         }
         database.update_activity_log(log_id, updated_activity_log, user_id)
         return redirect(url_for("get_activity_logs"))
 
     activity_log = database.get_activity_log_by_id(log_id, user_id)
     activities = database.retrieve_activities()
-    return render_template("update_activities_log.html", activity_log=activity_log, activities=activities)
+    return render_template("update_activity_log.html", activity_log=activity_log, activities=activities)
+
 
 @app.route("/delete_activity_log/<log_id>", methods=["POST"])
 def delete_activity_log(log_id):
@@ -392,44 +458,6 @@ def update_recipe(recipe_id):
 def delete_recipe(recipe_id):
     database.delete_recipe(recipe_id)
     return redirect(url_for("get_recipes"))
-
-@app.route("/profile")
-def get_profile():
-    user_id = session.get("user_id")
-    if not user_id:
-        return redirect(url_for("get_post_login_user"))
-    
-    user = database.retrieve_user_by_id(user_id)
-    return render_template("profile.html", user=user)
-@app.route('/update_profile', methods=['GET', 'POST'])
-def update_profile():
-    user_id = session.get('user_id')
-    if not user_id:
-        return redirect(url_for('get_post_login_user'))
-
-    user = database.retrieve_user_by_id(user_id)
-    if not user:
-        return redirect(url_for('get_post_login_user'))
-
-    if request.method == 'POST':
-        height = float(request.form['height'])
-        weight = float(request.form['weight'])
-        target_weight = float(request.form['target_weight'])
-
-        # Calculate BMI
-        bmi = weight / ((height / 100) ** 2)
-
-        # Update user profile
-        updated_profile = {
-            'height': height,
-            'weight': weight,
-            'bmi': bmi,
-            'target_weight': target_weight
-        }
-        database.update_user(user_id, updated_profile)
-        return redirect(url_for('get_profile'))
-
-    return render_template('update_profile.html', user=user)
 
 
 @app.route('/dashboard')

@@ -43,9 +43,6 @@ def retrieve_activities_by_user_id(user_id):
 def retrieve_activity_logs(user_id):
     activity_logs_collection = tracker_db.activity_log
     logs = list(activity_logs_collection.find({"user_id": user_id}))
-    for log in logs:
-        log["id"] = str(log["_id"])
-        del log["_id"]
     return logs
 
 
@@ -57,9 +54,6 @@ def create_activity_log(data):
 def get_activity_log_by_id(log_id, user_id):
     activity_logs_collection = tracker_db.activity_log
     log = activity_logs_collection.find_one({"_id": ObjectId(log_id), "user_id": user_id})
-    if log:
-        log["id"] = str(log["_id"])
-        del log["_id"]
     return log
 
 
@@ -87,7 +81,7 @@ def delete_activity(activity_id):
 
 def get_activity_by_id(activity_id):
     activities_collection = tracker_db.activities
-    return activities_collection.find_one({"_id": activity_id})
+    return activities_collection.find_one({"_id": ObjectId(activity_id)})
 
 def update_activity(activity_id, updated_data):
     activities_collection = tracker_db.activities
@@ -137,6 +131,28 @@ def update_recipe(recipe_id, updated_data):
     recipes_collection = tracker_db.recipes
     recipes_collection.update_one(
         {"_id": ObjectId(recipe_id)},
+        {"$set": updated_data}  # Replace the existing data with the new data
+    )
+
+def retrieve_meals():
+    meals_collection = tracker_db.meals
+    meals = list(meals_collection.find())
+    return meals
+def retrieve_meal_by_id(meal_id):
+    meals_collection = tracker_db.meals
+    return meals_collection.find_one({"_id": ObjectId(meal_id)})
+def create_meal(data):
+    meals_collection = tracker_db.meals
+    #data["_id"] = ObjectId(data["_id"])
+    new_meal = data
+    meals_collection.insert_one(new_meal)
+def delete_meal(meal_id):
+    meals_collection = tracker_db.meals
+    meals_collection.delete_one({"_id": ObjectId(meal_id)})
+def update_meal(meal_id, updated_data):
+    meals_collection = tracker_db.meals
+    meals_collection.update_one(
+        {"_id": ObjectId(meal_id)},
         {"$set": updated_data}  # Replace the existing data with the new data
     )
 

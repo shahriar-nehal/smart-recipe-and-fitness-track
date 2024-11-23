@@ -6,6 +6,8 @@ import pymongo
 from pymongo import MongoClient
 from flask import session
 from werkzeug.security import generate_password_hash
+from pprint import pprint
+from bson.errors import InvalidId
 
 app = Flask(__name__)
 app.secret_key = "123456"  # Replace with a strong secret key
@@ -72,61 +74,116 @@ def get_post_login_user():
             error = "Invalid email or password"
             return render_template("login.html", error=error)
     return render_template("login.html")
-@app.route("/activity_log")
-def get_activity_log_list():
+@app.route("/activities_log")
+def get_activity_logs():
     user_id = session.get("user_id")  # Retrieve user ID from session
     if not user_id:
-        return redirect(url_for("get_index"))  # Redirect to login if not logged in
+        return redirect(url_for("get_post_login_user"))
     
-    # Fetch activities for the logged-in user
-    activities = database.retrieve_activities_by_user_id(user_id)
-    return render_template("activity_log.html", activities=activities)
+    # Retrieve activity logs for the logged-in user
+    activity_logs = database.retrieve_activity_logs(user_id)
+    return render_template("activity_log.html", activity_logs=activity_logs)
 
-# Get, Post, Create activity
+
 @app.route("/create_activity_log", methods=["GET", "POST"])
 def get_post_create_activity_log():
-    if request.method == "POST":
-        new_activity = {
-            "user_id": session.get("user_id"),
-            "type": request.form["type"],
-            "duration": int(request.form["duration"]),
-            "calories_burned": int(request.form["calories_burned"]),
-            "date": request.form["date"]
-        }
-        database.create_activity_log(new_activity)
-        return redirect(url_for("get_activity_log_list"))
-    return render_template("create_activity_log.html")
-
-@app.route("/delete_activity_log/<activity_id>", methods=["POST"])
-def delete_activity_log(activity_id):
     user_id = session.get("user_id")
     if not user_id:
         return redirect(url_for("get_post_login_user"))
-    
-    database.delete_activity_log(activity_id, user_id)
-    return redirect(url_for("get_activity_log_list"))
 
-@app.route("/update_activity_log/<activity_id>", methods=["GET", "POST"])
-def update_activity_log(activity_id):
+    if request.method == "POST":
+        activity_id = request.form.get("activity_id")
+        duration = request.form.get("duration")
+
+        # Validate inputs
+        if not activity_id or not duration:
+            flash("Please fill all fields!", "error")
+            return redirect(url_for("get_post_create_activity_log"))
+
+        try:
+            # Ensure the activity_id is a valid ObjectId
+            activity_id = ObjectId(activity_id)
+        except InvalidId:
+            flash("Invalid activity selected. Please try again.", "error")
+            return redirect(url_for("get_post_create_activity_log"))
+
+        try:
+            duration = float(duration)  # Convert duration to float
+        except ValueError:
+            flash("Invalid duration. Please enter a valid number.", "error")
+            return redirect(url_for("get_post_create_activity_log"))
+
+        # Get user information
+        user = database.retrieve_user_by_id(user_id)
+        weight_kg = user.get("weight")
+        height_m = user.get("height") / 100  # Convert cm to meters
+        bmi = weight_kg / (height_m ** 2)
+
+        # Get activity MET value
+        activity = database.get_activity_by_id(activity_id)
+        if not activity:
+            flash("Activity not found. Please try again.", "error")
+            return redirect(url_for("get_post_create_activity_log"))
+
+        met_value = activity["met_value"]
+
+        # Calculate calories burned
+        calories_burned = met_value * weight_kg * (duration / 60)
+
+        # Create the activity log
+        new_activity_log = {
+            "user_id": user_id,
+            "activity_id": str(activity_id),
+            "duration": duration,
+            "calories_burned": calories_burned,
+            "activity_name": activity["name"],
+        }
+        database.create_activity_log(new_activity_log)
+        flash("Activity log created successfully!", "success")
+        return redirect(url_for("get_activity_logs"))
+
+    # Retrieve activities for the dropdown
+    activities = database.retrieve_activities()
+    return render_template("create_activity_log.html", activities=activities)
+
+
+@app.route("/update_activity_log/<log_id>", methods=["GET", "POST"])
+def update_activity_log(log_id):
     user_id = session.get("user_id")
     if not user_id:
         return redirect(url_for("get_post_login_user"))
-    
+
     if request.method == "POST":
-        updated_activity = {
-            "type": request.form["type"],
-            "duration": int(request.form["duration"]),
-            "calories_burned": int(request.form["calories_burned"]),
-            "date": request.form["date"]
+        activity_id = request.form["activity_id"]
+        duration = float(request.form["duration"])
+
+        # Recalculate calories burned
+        user = database.retrieve_user_by_id(user_id)
+        weight_kg = user.get("weight")
+        activity = database.get_activity_by_id(activity_id)
+        met_value = activity["met_value"]
+        calories_burned = met_value * weight_kg * (duration / 60)
+
+        updated_activity_log = {
+            "activity_id": activity_id,
+            "duration": duration,
+            "calories_burned": calories_burned,
         }
-        database.update_activity_log(activity_id, updated_activity, user_id)
-        return redirect(url_for("get_activity_log_list"))
-    
-    # Fetch the activity to pre-fill the form
-    activity = database.get_activity_log_by_id(activity_id, user_id)
-    if not activity:
-        return redirect(url_for("get_activity_log_list"))  # Redirect if activity not found or not owned by user
-    return render_template("update_activity.html", activity=activity)
+        database.update_activity_log(log_id, updated_activity_log, user_id)
+        return redirect(url_for("get_activity_logs"))
+
+    activity_log = database.get_activity_log_by_id(log_id, user_id)
+    activities = database.retrieve_activities()
+    return render_template("update_activities_log.html", activity_log=activity_log, activities=activities)
+
+@app.route("/delete_activity_log/<log_id>", methods=["POST"])
+def delete_activity_log(log_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("get_post_login_user"))
+
+    database.delete_activity_log(log_id, user_id)
+    return redirect(url_for("get_activity_logs"))
 
 @app.route("/activities")
 def get_activity_list():
@@ -141,7 +198,7 @@ def get_activity_list():
 def get_post_create_activity():
     if request.method == "POST":
         new_activity = {
-            "name": request.form["type"],
+            "name": request.form["name"],
             "met_value": float(request.form["met_value"]),
         }
         database.create_activity(new_activity)
@@ -156,7 +213,7 @@ def update_activity(activity_id):
     
     if request.method == "POST":
         updated_activity = {
-            "name": request.form["name"],
+            "name": request.form["name"],  # Ensure this matches the form field name
             "met_value": float(request.form["met_value"]),
         }
         database.update_activity(activity_id, updated_activity)
@@ -164,8 +221,9 @@ def update_activity(activity_id):
     
     # Fetch the activity to pre-fill the form
     activity = database.get_activity_by_id(activity_id)
+    pprint(activity)
     if not activity:
-        return redirect(url_for("get_activity_list"))  # Redirect if activity not found or not owned by user
+        return redirect(url_for("get_activity_list"))  # Redirect if activity not found
     return render_template("update_activity.html", activity=activity)
 
 @app.route("/delete_activity/<activity_id>", methods=["POST"])

@@ -5,7 +5,7 @@
         <h2 class="text-center">Update Activity</h2>
         <form action="{{ url_for('update_activity', activity_id=activity['_id']) }}" method="POST">
             <div class="form-group">
-                <label for="Name">Name</label>
+                <label for="name">Type</label>
                 <input type="text" class="form-control" id="name" name="name" value="{{ activity.name }}" required>
             </div>
             <div class="form-group">

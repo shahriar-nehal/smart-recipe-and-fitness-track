@@ -1,31 +1,33 @@
-{% extends "base.html" %} {% block title %}Activities{% endblock %} {% block
-content %}
+{% extends "base.html" %}
+
+{% block title %}Activities{% endblock %}
+
+{% block content %}
 <div class="container mt-5">
-  <h1>Activities</h1>
-  <table class="table table-striped">
-    <thead>
-      <tr>
-        <th scope="col">Activity Name</th>
-        <th scope="col">MET Value</th>
-        <th scope="col">Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for activity in activities %}
-      <tr>
-        <td>{{ activity.name }}</td>
-        <td>{{ activity.met_value }}</td>
-        <td>
-            <form action="{{ url_for('delete_activity', activity_id=activity['_id']) }}" method="POST" style="display: inline;">
-                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-            </form>
-            <a href="{{ url_for('update_activity', activity_id=activity['_id']) }}" class="btn btn-warning btn-sm">Edit</a>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+    <h1>Activities</h1>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th scope="col">Activity Name</th>
+                <th scope="col">MET Value</th>
+                <th scope="col">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for activity in activities %}
+            <tr>
+                <td>{{ activity.name }}</td>
+                <td>{{ activity.met_value }}</td>
+                <td>
+                    <form action="{{ url_for('delete_activity', activity_id=activity['_id']) }}" method="POST" style="display: inline;">
+                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                    </form>
+                    <a href="{{ url_for('update_activity', activity_id=activity['_id']) }}" class="btn btn-warning btn-sm">Edit</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <a href="/create_activity" class="btn btn-primary mt-3">Add New Activity</a>
 </div>
-<br />
-<a href="/create_activity">Add New Activity</a><br />
 {% endblock %}

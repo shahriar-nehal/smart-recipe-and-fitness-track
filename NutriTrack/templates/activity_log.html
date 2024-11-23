@@ -1,38 +1,32 @@
 {% extends "base.html" %}
 
-{% block title %}Activities{% endblock %}
+{% block title %}Activity Logs{% endblock %}
 
 {% block content %}
-    <h1>List of activities</h1>
+<div class="container mt-5">
+    <h1>Activity Logs</h1>
     <table class="table table-striped">
         <thead>
             <tr>
-                <th>Type</th>
-                <th>Duration</th>
-                <th>Calorie Burn</th>
-                <th>Date</th>
-                <th>Actions</th>
+                <th scope="col">Activity Name</th>
+                <th scope="col">Duration (minutes)</th>
+                <th scope="col">Calories Burned</th>
+                <th scope="col">Actions</th>
             </tr>
         </thead>
         <tbody>
-            {% for activity in activities %}
+            {% for log in activity_logs %}
             <tr>
-                <td>{{ activity.type }}</td>
-                <td>{{ activity.duration }}</td>
-                <td>{{ activity.calories_burned }}</td>
-                <td>{{ activity.date }}</td>
+                <td>{{ log.activity_name }}</td>
+                <td>{{ log.duration }}</td>
+                <td>{{ log.calories_burned }}</td>
                 <td>
-                    <form action="{{ url_for('delete_activity', activity_id=activity['_id']) }}" method="POST" style="display: inline;">
-                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                    </form>
-                    <a href="{{ url_for('update_activity', activity_id=activity['_id']) }}" class="btn btn-warning btn-sm">Edit</a>
+                    <a href="{{ url_for('update_activity_log', log_id=log.id) }}" class="btn btn-warning btn-sm">Edit</a>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
-    
-    <br>
-    <a href="/create_activity">Add New Activity</a><br>
-    <a href="/logout">Home</a>
+    <a href="/create_activity_log" class="btn btn-primary mt-3">Log New Activity</a>
+</div>
 {% endblock %}

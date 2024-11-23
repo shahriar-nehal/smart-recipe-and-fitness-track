@@ -14,13 +14,10 @@ client = MongoClient(uri, server_api=ServerApi('1'))
 #client = MongitaClientDisk()
 
 tracker_db = client.tracker_db
+
 def retrieve_activities():
     activities_collection = tracker_db.activities
     activities = list(activities_collection.find())
-    for activity in activities:
-        activity["id"] = str(activity["_id"])
-        del activity["_id"]
-        # pet["_id"] = ObjectId(pet["id"])
     return activities
 
 def create_user(data):
@@ -43,27 +40,39 @@ def retrieve_activities_by_user_id(user_id):
     activities = list(activities_collection.find({"user_id": user_id}))
     return activities
 
+def retrieve_activity_logs(user_id):
+    activity_logs_collection = tracker_db.activity_log
+    logs = list(activity_logs_collection.find({"user_id": user_id}))
+    for log in logs:
+        log["id"] = str(log["_id"])
+        del log["_id"]
+    return logs
+
+
 def create_activity_log(data):
-    activities_collection = tracker_db.activities
-    #data["_id"] = ObjectId(data["_id"])
-    new_activity = data
-    activities_collection.insert_one(new_activity)
+    activity_logs_collection = tracker_db.activity_log
+    activity_logs_collection.insert_one(data)
 
-def delete_activity_log(activity_id, user_id):
-    activities_collection = tracker_db.activities
-    # Ensure the user can only delete their own activities
-    activities_collection.delete_one({"_id": ObjectId(activity_id), "user_id": user_id})
 
-def get_activity_log_by_id(activity_id, user_id):
-    activities_collection = tracker_db.activities
-    return activities_collection.find_one({"_id": ObjectId(activity_id), "user_id": user_id})
+def get_activity_log_by_id(log_id, user_id):
+    activity_logs_collection = tracker_db.activity_log
+    log = activity_logs_collection.find_one({"_id": ObjectId(log_id), "user_id": user_id})
+    if log:
+        log["id"] = str(log["_id"])
+        del log["_id"]
+    return log
 
-def update_activity_log(activity_id, updated_data, user_id):
-    activities_collection = tracker_db.activities
-    activities_collection.update_one(
-        {"_id": ObjectId(activity_id), "user_id": user_id},
+
+def update_activity_log(log_id, updated_data, user_id):
+    activity_logs_collection = tracker_db.activity_log
+    activity_logs_collection.update_one(
+        {"_id": ObjectId(log_id), "user_id": user_id},
         {"$set": updated_data}
     )
+
+def delete_activity_log(log_id, user_id):
+    activity_logs_collection = tracker_db.activity_log
+    activity_logs_collection.delete_one({"_id": ObjectId(log_id), "user_id": user_id})
 
 def create_activity(data):
     activities_collection = tracker_db.activities
@@ -78,7 +87,7 @@ def delete_activity(activity_id):
 
 def get_activity_by_id(activity_id):
     activities_collection = tracker_db.activities
-    return activities_collection.find_one({"_id": ObjectId(activity_id)})
+    return activities_collection.find_one({"_id": activity_id})
 
 def update_activity(activity_id, updated_data):
     activities_collection = tracker_db.activities

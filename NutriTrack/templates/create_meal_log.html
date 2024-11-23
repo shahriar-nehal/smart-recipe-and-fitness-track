@@ -7,12 +7,17 @@
     <h1>Log New Meal</h1>
     <form action="/create_meal_log" method="POST">
         <div class="form-group">
-            <label for="meal_name">Meal Name</label>
-            <input type="text" class="form-control" id="meal_name" name="meal_name" required>
+            <label for="recipe_id">Meal Name</label>
+            <select class="form-control" name="recipe_id" id="recipe_id" required>
+                <option value="" disabled selected>Select a recipe</option>
+                {% for recipe in recipes %}
+                <option value="{{ recipe._id }}">{{ recipe.name }}</option>
+                {% endfor %}
+            </select>
         </div>
         <div class="form-group">
             <label for="calories_intake">Calories Intake</label>
-            <input type="number" class="form-control" id="calories_intake" name="calories_intake" required>
+            <input type="number" class="form-control" id="calories_intake" name="calories_intake" step="0.01" required>
         </div>
         <div class="form-group">
             <label for="meal_type">Meal Type</label>
@@ -35,4 +40,27 @@
         <button type="submit" class="btn btn-primary">Log Meal</button>
     </form>
 </div>
+<script>
+    document.getElementById("recipe_id").addEventListener("change", function () {
+        const recipeId = this.value;
+
+        // Fetch calories from the server
+        fetch(`/get_recipe/${recipeId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Failed to fetch recipe details.");
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Populate the calories intake field
+                document.getElementById("calories_intake").value = data.calories;
+            })
+            .catch(error => {
+                console.error("Error fetching recipe details:", error);
+                document.getElementById("calories_intake").value = "";
+            });
+    });
+</script>
 {% endblock %}
+

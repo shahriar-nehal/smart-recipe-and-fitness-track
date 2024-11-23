@@ -1,5 +1,5 @@
 import datetime
-from flask import Flask, flash, render_template, request, redirect, url_for
+from flask import Flask, flash, jsonify, render_template, request, redirect, url_for
 import database
 from bson.objectid import ObjectId
 import pymongo
@@ -370,6 +370,16 @@ def get_recipes():
     
     return render_template("recipes.html", recipes=recipes)
 
+@app.route("/get_recipe/<recipe_id>", methods=["GET"])
+def get_recipe(recipe_id):
+    recipe = database.retrieve_recipe_by_id(recipe_id)
+    if not recipe:
+        return jsonify({"error": "Recipe not found"}), 404
+    return jsonify({
+        "calories": recipe["total_calories"]
+    })
+
+
 # Route: Create Recipe
 @app.route("/create_recipe", methods=["GET", "POST"])
 def create_recipe():
@@ -459,6 +469,95 @@ def delete_recipe(recipe_id):
     database.delete_recipe(recipe_id)
     return redirect(url_for("get_recipes"))
 
+@app.route("/meal_log")
+def get_meal_logs():
+    user_id = session.get("user_id")  # Retrieve user ID from session
+    if not user_id:
+        return redirect(url_for("get_post_login_user"))
+    
+    # Retrieve activity logs for the logged-in user
+    meal_logs = database.retrieve_meal_logs_by_user_id(user_id)
+    return render_template("meal_log.html", meal_logs=meal_logs)
+
+@app.route("/create_meal_log", methods=["GET", "POST"])
+def create_meal_log():
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("get_post_login_user"))
+
+    if request.method == "POST":
+        recipe_id = request.form["recipe_id"]
+
+        # Fetch the recipe details
+        recipe = database.retrieve_recipe_by_id(recipe_id)
+        if not recipe:
+            flash("Invalid recipe selection!", "error")
+            return redirect(url_for("create_meal_log"))
+
+        # Prepare the meal log
+        meal_log = {
+            "user_id": user_id,
+            "recipe_id": recipe_id,
+            "meal_name": recipe["name"],
+            "calories_intake": recipe["total_calories"],
+            "meal_type": request.form["meal_type"],
+            "date": request.form["date"],
+            "time": request.form["time"],
+        }
+        database.create_meal_log(meal_log)
+        return redirect(url_for("get_meal_logs"))
+
+    # Retrieve all recipes for the dropdown
+    recipes = database.retrieve_recipes()
+    return render_template("create_meal_log.html", recipes=recipes)
+
+@app.route("/update_meal_log/<log_id>", methods=["GET", "POST"])
+def update_meal_log(log_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("get_post_login_user"))
+
+    if request.method == "POST":
+        recipe_id = request.form["recipe_id"]
+
+        # Fetch the recipe details
+        recipe = database.retrieve_recipe_by_id(recipe_id)
+        if not recipe:
+            flash("Invalid recipe selection!", "error")
+            return redirect(url_for("update_meal_log", log_id=log_id))
+
+        # Prepare the meal log
+        meal_log = {
+            "user_id": user_id,
+            "recipe_id": recipe_id,
+            "meal_name": recipe["name"],
+            "calories_intake": recipe["total_calories"],
+            "meal_type": request.form["meal_type"],
+            "date": request.form["date"],
+            "time": request.form["time"],
+        }
+        database.update_meal_log(log_id, meal_log)
+        return redirect(url_for("get_meal_logs"))
+
+    # Retrieve the meal log to be updated    
+    meal_log = database.retrieve_meal_by_id(log_id)
+    if not meal_log:    
+        return redirect(url_for("get_meal_logs"))  # Redirect if meal log not found
+
+    # Retrieve all recipes for the dropdown
+    recipes = database.retrieve_recipes()
+
+    return render_template("update_meal_log.html", meal_log=meal_log, recipes=recipes)
+
+@app.route("/delete_meal_log/<log_id>", methods=["POST"])
+def delete_meal_log(log_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("get_post_login_user"))
+
+    database.delete_meal_log(log_id, user_id)
+    return redirect(url_for("get_meal_logs"))
+        
 
 @app.route('/dashboard')
 def dashboard():

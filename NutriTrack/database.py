@@ -138,18 +138,22 @@ def retrieve_meals():
     meals_collection = tracker_db.meals
     meals = list(meals_collection.find())
     return meals
+def retrieve_meal_logs_by_user_id(user_id):
+    meal_logs_collection = tracker_db.meals
+    logs = list(meal_logs_collection.find({"user_id": user_id}))
+    return logs
 def retrieve_meal_by_id(meal_id):
     meals_collection = tracker_db.meals
     return meals_collection.find_one({"_id": ObjectId(meal_id)})
-def create_meal(data):
+def create_meal_log(data):
     meals_collection = tracker_db.meals
     #data["_id"] = ObjectId(data["_id"])
     new_meal = data
     meals_collection.insert_one(new_meal)
-def delete_meal(meal_id):
+def delete_meal_log(meal_id, user_id):
     meals_collection = tracker_db.meals
-    meals_collection.delete_one({"_id": ObjectId(meal_id)})
-def update_meal(meal_id, updated_data):
+    meals_collection.delete_one({"_id": ObjectId(meal_id), "user_id": user_id})
+def update_meal_log(meal_id, updated_data):
     meals_collection = tracker_db.meals
     meals_collection.update_one(
         {"_id": ObjectId(meal_id)},

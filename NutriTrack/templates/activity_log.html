@@ -5,6 +5,7 @@
 {% block content %}
 <div class="container mt-5">
     <h1>Activity Logs</h1>
+    <a href="/create_activity_log" class="btn btn-primary mt-3">Log New Activity</a>
     <table class="table table-striped">
         <thead>
             <tr>
@@ -22,10 +23,10 @@
             <tr>
                 <td>{{ log.activity_name }}</td>
                 <td>{{ log.duration }}</td>
-                <td>{{ log.calories_burned }}</td>
+                <td>{{ "%.2f"|format(log.calories_burned) }}
                 <td>{{ log.date }}</td>
                 <td>{{ log.time }}</td>
-                <td>{{ log.bmi }}</td>
+                <td>{{ "%.2f"|format(log.bmi) }}</td>
                 <td>
                     <form action="{{ url_for('delete_activity_log', log_id=log['_id']) }}" method="POST" style="display: inline;">
                         <button type="submit" class="btn btn-danger btn-sm">Delete</button>
@@ -36,6 +37,5 @@
             {% endfor %}
         </tbody>
     </table>
-    <a href="/create_activity_log" class="btn btn-primary mt-3">Log New Activity</a>
 </div>
 {% endblock %}

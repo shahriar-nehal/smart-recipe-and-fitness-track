@@ -5,6 +5,7 @@
 {% block content %}
 <div class="container mt-5">
     <h1>Meal Logs</h1>
+    <a href="/create_meal_log" class="btn btn-primary mt-3">Log New Meal</a>
     <table class="table table-striped">
         <thead>
             <tr>
@@ -34,6 +35,5 @@
             {% endfor %}
         </tbody>
     </table>
-    <a href="/create_meal_log" class="btn btn-primary mt-3">Log New Meal</a>
 </div>
 {% endblock %}

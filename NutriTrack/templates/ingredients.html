@@ -2,6 +2,7 @@
 {% block title %}Ingredients{% endblock %}
 {% block content %}
     <h1>List of Ingredients</h1>
+    <a href="/create_ingredient" class="btn btn-primary mt-3">Create Ingredient</a>
     <table class="table table-striped">
         <thead>
             <tr>
@@ -27,8 +28,4 @@
             </tbody>
         </table>
     </div>
-    <br>
-    <a href="/create_ingredient">Add New Ingredient</a><br>
-    <a href="/recipes">My Recipes</a><br>
-    <a href="/logout">Home</a>
 {% endblock %}

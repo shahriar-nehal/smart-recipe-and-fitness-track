@@ -1,4 +1,3 @@
-import datetime
 from flask import Flask, flash, jsonify, render_template, request, redirect, url_for
 import database
 from bson.objectid import ObjectId
@@ -8,6 +7,7 @@ from flask import session
 from werkzeug.security import generate_password_hash
 from pprint import pprint
 from bson.errors import InvalidId
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 app.secret_key = "123456"  # Replace with a strong secret key
@@ -558,6 +558,45 @@ def delete_meal_log(log_id):
     database.delete_meal_log(log_id, user_id)
     return redirect(url_for("get_meal_logs"))
         
+@app.route('/progress_report', methods=['GET'])
+def daily_progress():
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('get_post_login_user'))
+
+    date = request.args.get('date', datetime.today().strftime('%Y-%m-%d'))
+    progress_data = database.calculate_net_calories(user_id, date)
+    
+    return render_template('progress.html', progress_data=progress_data, date=date)
+
+from datetime import datetime, timedelta
+
+@app.route('/weekly_progress', methods=['GET'])
+def weekly_progress():
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('get_post_login_user'))
+
+    end_date = datetime.today()
+    start_date = end_date - timedelta(days=6)
+
+    # Calculate net calories and weight change
+    weekly_data, weight_change_kg = database.calculate_weekly_net_calories(user_id, start_date, end_date)
+
+    # Retrieve and update user data
+    user = database.retrieve_user_by_id(user_id)
+    if user:
+        current_weight = user.get('weight', 0)
+        height_m = user.get('height', 0) / 100.0
+
+        new_weight = current_weight + weight_change_kg
+        new_bmi = new_weight / (height_m ** 2) if height_m > 0 else None
+
+        database.update_user(user_id, {"weight": new_weight, "bmi": new_bmi})
+    
+    return render_template('weekly_progress.html', weekly_data=weekly_data, weight_change_kg=weight_change_kg)
+
+
 
 @app.route('/dashboard')
 def dashboard():
@@ -575,5 +614,8 @@ def dashboard():
 def logout():
     session.clear()  # Clear the session
     return redirect(url_for("get_index"))  # Redirect to login page
+
+if __name__ == "__main__":
+    app.run(debug=True)
 
 

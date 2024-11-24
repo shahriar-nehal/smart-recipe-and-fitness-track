@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from pprint import pprint
 #import mongita
 from bson.objectid import ObjectId
@@ -159,6 +160,146 @@ def update_meal_log(meal_id, updated_data):
         {"_id": ObjectId(meal_id)},
         {"$set": updated_data}  # Replace the existing data with the new data
     )
+
+def get_total_calories_consumed(user_id, date):
+    meals_collection = tracker_db.meals
+    meal_logs = meals_collection.find({'user_id': user_id, 'date': date})
+    total_calories = sum(log['calories_intake'] for log in meal_logs)
+    return total_calories
+
+def get_total_calories_burned(user_id, date):
+    activity_logs_collection = tracker_db.activity_log
+    activity_logs = activity_logs_collection.find({'user_id': user_id, 'date': date})
+    total_calories_burned = sum(log['calories_burned'] for log in activity_logs)
+    return total_calories_burned
+
+def calculate_net_calories(user_id, date):
+    total_calories_consumed = get_total_calories_consumed(user_id, date)
+    total_calories_burned = get_total_calories_burned(user_id, date)
+    net_calories = total_calories_consumed - total_calories_burned
+    return {
+        'total_calories_consumed': total_calories_consumed,
+        'total_calories_burned': total_calories_burned,
+        'net_calories': net_calories
+    }
+
+def get_weekly_calories_consumed(user_id, start_date, end_date):
+    meals_collection = tracker_db.meals
+    meal_logs = meals_collection.find({
+        'user_id': user_id,
+        'date': {'$gte': start_date, '$lte': end_date}
+    })
+
+    daily_calories = {date.strftime('%Y-%m-%d'): 0 for date in (start_date + timedelta(days=n) for n in range(7))}
+    for log in meal_logs:
+        date = log['date'].strftime('%Y-%m-%d')
+        daily_calories[date] += log['calories_intake']
+
+    return daily_calories
+
+
+def get_weekly_calories_burned(user_id, start_date, end_date):
+    activity_logs_collection = tracker_db.activity_log
+    activity_logs = activity_logs_collection.find({
+        'user_id': user_id,
+        'date': {'$gte': start_date, '$lte': end_date}
+    })
+
+    daily_calories_burned = {date.strftime('%Y-%m-%d'): 0 for date in (start_date + timedelta(days=n) for n in range(7))}
+    for log in activity_logs:
+        date = log['date'].strftime('%Y-%m-%d')
+        daily_calories_burned[date] += log['calories_burned']
+
+    return daily_calories_burned
+
+def calculate_weekly_net_calories(user_id, start_date, end_date):
+    daily_calories_consumed = get_weekly_calories_consumed(user_id, start_date, end_date)
+    daily_calories_burned = get_weekly_calories_burned(user_id, start_date, end_date)
+    
+    weekly_data = []
+    total_net_calories = 0
+    
+    for single_date in (start_date + timedelta(days=n) for n in range((end_date - start_date).days + 1)):
+        date_str = single_date.strftime('%Y-%m-%d')
+        consumed = daily_calories_consumed.get(date_str, 0)
+        burned = daily_calories_burned.get(date_str, 0)
+        net_calories = consumed - burned
+        total_net_calories += net_calories
+        weekly_data.append({'date': date_str, 'consumed': consumed, 'burned': burned, 'net': net_calories})
+    
+    # Estimate weight change
+    weight_change_kg = total_net_calories / 7000.0  # 7000 calories per kg
+    return weekly_data, weight_change_kg
+
+def get_total_calories_consumed_for_week(user_id, start_date, end_date):
+    meals_collection = tracker_db.meals
+    start_date_str = start_date.strftime('%Y-%m-%d')
+    end_date_str = end_date.strftime('%Y-%m-%d')
+
+    # Query the database
+    meal_logs = meals_collection.find({
+        'user_id': user_id,
+        'date': {'$gte': start_date_str, '$lte': end_date_str}
+    })
+    
+    daily_calories = {}
+    for log in meal_logs:
+        # Convert date string to datetime object
+        log_date = datetime.strptime(log['date'], '%Y-%m-%d').date()
+        daily_calories[log_date] = daily_calories.get(log_date, 0) + log.get('calories_intake', 0)
+    
+    print("Calories Consumed (Daily):", daily_calories)
+    return daily_calories
+
+
+def get_total_calories_burned_for_week(user_id, start_date, end_date):
+    activity_logs_collection = tracker_db.activity_log
+    start_date_str = start_date.strftime('%Y-%m-%d')
+    end_date_str = end_date.strftime('%Y-%m-%d')
+
+    # Query the database
+    activity_logs = activity_logs_collection.find({
+        'user_id': user_id,
+        'date': {'$gte': start_date_str, '$lte': end_date_str}
+    })
+
+    daily_calories_burned = {}
+    for log in activity_logs:
+        # Convert date string to datetime object
+        log_date = datetime.strptime(log['date'], '%Y-%m-%d').date()
+        daily_calories_burned[log_date] = daily_calories_burned.get(log_date, 0) + log.get('calories_burned', 0)
+
+    print("Calories Burned (Daily):", daily_calories_burned)
+    return daily_calories_burned
+
+
+def calculate_weekly_net_calories(user_id, start_date, end_date):
+    consumed = get_total_calories_consumed_for_week(user_id, start_date, end_date)
+    burned = get_total_calories_burned_for_week(user_id, start_date, end_date)
+
+    weekly_data = []
+    total_net_calories = 0
+
+    for single_date in (start_date + timedelta(days=n) for n in range((end_date - start_date).days + 1)):
+        date = single_date.date()
+        consumed_calories = consumed.get(date, 0)
+        burned_calories = burned.get(date, 0)
+        net_calories = consumed_calories - burned_calories
+        total_net_calories += net_calories
+
+        weekly_data.append({
+            'date': single_date.strftime('%Y-%m-%d'),
+            'consumed': consumed_calories,
+            'burned': burned_calories,
+            'net': net_calories
+        })
+
+    weight_change_kg = total_net_calories / 7000.0  # Approx. 1 kg per 7000 calories
+    print("Weekly Data:", weekly_data)
+    print("Total Weight Change (kg):", weight_change_kg)
+
+    return weekly_data, weight_change_kg
+
 
 def retrieve_user_by_id(user_id):
     users_collection = tracker_db.users

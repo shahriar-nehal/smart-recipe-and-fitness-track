@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Daily Progress{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Daily Progress Report</h1>
+    <p>Date: {{ date }}</p>
+    
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Total Calories Consumed</h5>
+            <p class="card-text">{{ progress_data.total_calories_consumed }} calories</p>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Total Calories Burned</h5>
+            <p class="card-text">{{ progress_data.total_calories_burned }} calories</p>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Net Calories</h5>
+            <p class="card-text">{{ progress_data.net_calories }} calories</p>
+        </div>
+    </div>
+    
+    <canvas id="caloriesChart"></canvas>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('caloriesChart').getContext('2d');
+    const caloriesChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Calories Consumed', 'Calories Burned', 'Net Calories'],
+            datasets: [{
+                label: 'Calories',
+                data: [
+                    {{ progress_data.total_calories_consumed }},
+                    {{ progress_data.total_calories_burned }},
+                    {{ progress_data.net_calories }}
+                ],
+                backgroundColor: ['#007bff', '#28a745', '#ffc107']
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

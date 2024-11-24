@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Weekly Progress{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Weekly Progress Report</h1>
+    
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Estimated Weight Change</h5>
+            <p class="card-text">{{ weight_change_kg | round(2) }} kg</p>
+        </div>
+    </div>
+    
+    <canvas id="caloriesChart"></canvas>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('caloriesChart').getContext('2d');
+    const dates = {{ weekly_data | map(attribute='date') | list | tojson }};
+    const consumed = {{ weekly_data | map(attribute='consumed') | list | tojson }};
+    const burned = {{ weekly_data | map(attribute='burned') | list | tojson }};
+    const net = {{ weekly_data | map(attribute='net') | list | tojson }};
+    
+    const caloriesChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [
+                {
+                    label: 'Calories Consumed',
+                    data: consumed,
+                    borderColor: '#007bff',
+                    backgroundColor: '#007bff',
+                    fill: false
+                },
+                {
+                    label: 'Calories Burned',
+                    data: burned,
+                    borderColor: '#28a745',
+                    backgroundColor: '#28a745',
+                    fill: false
+                },
+                {
+                    label: 'Net Calories',
+                    data: net,
+                    borderColor: '#ffc107',
+                    backgroundColor: '#ffc107',
+                    fill: false
+                }
+            ]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

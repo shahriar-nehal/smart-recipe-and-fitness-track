@@ -37,5 +37,11 @@
             {% endfor %}
         </tbody>
     </table>
+    <h2>Badges</h2>
+    <ul>
+        {% for badge in badges %}
+        <li>{{ badge.name }} - {{ badge.description }}</li>
+        {% endfor %}
+    </ul>
 </div>
 {% endblock %}

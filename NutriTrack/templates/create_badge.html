@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Create New Badge{% endblock %}
+{% block content %}
+    <div class="container mt-5">
+        <h2 class="text-center">Create Badge</h2>
+        <form action="/create_badge" method="POST">
+            <div class="form-group">
+                <label for="badge_name">Badge Name</label>
+                <input type="text" class="form-control" id="badge_name" name="badge_name" required>
+            </div>
+            <div class="form-group">
+                <label for="badge_description">Badge Description:</label>
+                <textarea class="form-control" id="badge_description" name="badge_description" required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="badge_criteria">Badge Criteria:</label>
+                <input type="text" class="form-control" id="badge_criteria" name="badge_criteria" placeholder="e.g., activities_completed >= 1" required>
+            </div>
+            <br>            
+            <button type="submit" class="btn btn-primary btn-block">Create</button>
+        </form>
+    </div>
+{% endblock %}

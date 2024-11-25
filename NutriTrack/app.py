@@ -1,6 +1,7 @@
 from flask import Flask, flash, jsonify, render_template, request, redirect, url_for
 import database
-from bson.objectid import ObjectId
+#from bson.objectid import ObjectId
+from bson import errors, ObjectId
 import pymongo
 from pymongo import MongoClient
 from flask import session
@@ -127,7 +128,8 @@ def get_activity_logs():
     
     # Retrieve activity logs for the logged-in user
     activity_logs = database.retrieve_activity_logs(user_id)
-    return render_template("activity_log.html", activity_logs=activity_logs)
+    badges = database.retrieve_badges_by_user_id(user_id)
+    return render_template("activity_log.html", activity_logs=activity_logs, badges=badges)
 
 
 @app.route("/create_activity_log", methods=["GET", "POST"])
@@ -190,6 +192,7 @@ def get_post_create_activity_log():
         }
         database.create_activity_log(new_activity_log)
         flash("Activity log created successfully!", "success")
+        database.assign_badges(user_id)
         return redirect(url_for("get_activity_logs"))
 
     # Retrieve activities for the dropdown
@@ -208,7 +211,6 @@ def update_activity_log(log_id):
         duration = float(request.form["duration"])
 
         # Validate activity_id
-        from bson import ObjectId, errors
         try:
             activity = database.get_activity_by_id(ObjectId(activity_id))
         except errors.InvalidId:
@@ -595,6 +597,41 @@ def weekly_progress():
         database.update_user(user_id, {"weight": new_weight, "bmi": new_bmi})
     
     return render_template('weekly_progress.html', weekly_data=weekly_data, weight_change_kg=weight_change_kg)
+
+@app.route("/badges")
+def get_badges():
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("get_post_login_user"))
+
+    badges = database.retrieve_badges()
+    return render_template("badges.html", badges=badges)
+
+@app.route("/create_badge", methods=["GET", "POST"])
+def get_post_create_badge():
+    if request.method == "POST":
+        # Collect form data
+        badge_name = request.form.get("badge_name")
+        badge_description = request.form.get("badge_description")
+        badge_criteria = request.form.get("badge_criteria")
+
+        # Validate inputs
+        if not badge_name or not badge_description or not badge_criteria:
+            flash("All fields are required to create a badge!", "error")
+            return redirect(url_for("get_post_create_badge"))
+
+        # Insert badge into the database
+        new_badge = {
+            "name": badge_name,
+            "description": badge_description,
+            "type": "criteria",  # Assuming all badges are criteria-based
+            "criteria": badge_criteria
+        }
+        database.create_badge(new_badge)  # Custom function to insert into badges collection
+        flash("Badge created successfully!", "success")
+        return redirect(url_for("get_badges"))
+
+    return render_template("create_badge.html")
 
 
 

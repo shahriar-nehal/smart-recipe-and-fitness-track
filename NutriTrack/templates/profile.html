@@ -8,9 +8,9 @@ content %}
       <p><strong>Email:</strong> {{ user.email }}</p>
       <p><strong>Date of Birth:</strong> {{ user.dob }}</p>
       <p><strong>Gender:</strong> {{ user.gender }}</p>
-      <p><strong>Height:</strong> {{ user.height }} cm</p>
-      <p><strong>Weight:</strong> {{ user.weight }} kg</p>
-      <p><strong>BMI:</strong> {{ user.bmi }}</p>
+      <p><strong>Height:</strong> {{ "%.2f"|format(user.height) }} cm</p>
+      <p><strong>Weight:</strong> {{ "%.2f"|format(user.weight) }} kg</p>
+      <p><strong>BMI:</strong> {{ "%.2f"|format(user.bmi) }}</p>
       <p><strong>Target Weight:</strong> {{ user.target_weight }} kg</p>
       <a href="/update_profile" class="btn btn-warning">Edit Profile</a>
     </div>

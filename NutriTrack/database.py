@@ -311,3 +311,94 @@ def update_user(user_id, updated_data):
         {"_id": ObjectId(user_id)},
         {"$set": updated_data}
     )
+
+from datetime import datetime, timedelta
+
+def get_total_calories_burned1(user_id, current_date):
+    activity_logs_collection = tracker_db.activity_logs
+    # Convert current_date to datetime with start and end of the day
+    start_of_day = datetime.combine(current_date, datetime.min.time())
+    end_of_day = start_of_day + timedelta(days=1) - timedelta(seconds=1)
+
+    # Query MongoDB for activity logs within this date range
+    activity_logs = activity_logs_collection.find({
+        "user_id": user_id,
+        "timestamp": {"$gte": start_of_day, "$lte": end_of_day}
+    })
+
+    # Sum up calories burned from the logs
+    total_calories_burned = sum(log['calories_burned'] for log in activity_logs)
+    return total_calories_burned
+
+
+def check_consecutive_days(user_activities):
+    # Extract dates and ensure they are datetime objects
+    activity_dates = []
+    for activity in user_activities:
+        if 'date' in activity:
+            # Convert string dates to datetime objects if necessary
+            date_value = activity['date']
+            if isinstance(date_value, str):
+                date_value = datetime.strptime(date_value, '%Y-%m-%d')  # Adjust format if needed
+            activity_dates.append(date_value.date())
+
+    activity_dates = sorted(activity_dates)  # Sort dates
+
+    if not activity_dates:
+        return 0
+
+    max_consecutive_days = 1
+    current_streak = 1
+
+    for i in range(1, len(activity_dates)):
+        # Check if the current date is exactly one day after the previous date
+        if activity_dates[i] == activity_dates[i - 1] + timedelta(days=1):
+            current_streak += 1
+        else:
+            max_consecutive_days = max(max_consecutive_days, current_streak)
+            current_streak = 1
+
+    max_consecutive_days = max(max_consecutive_days, current_streak)
+
+    return max_consecutive_days
+
+
+def assign_badges(user_id):
+    """Assign badges to a user based on activity logs and criteria."""
+    activity_log_collection = tracker_db.activity_log
+    badges_collection = tracker_db.badges
+    user_activities = list(activity_log_collection.find({"user_id": user_id}))
+    consecutive_days = check_consecutive_days(user_activities)
+    current_date = datetime.today().date()
+    daily_calories_burned = get_total_calories_burned1(user_id, current_date)
+
+    for badge in badges_collection.find({"type": "criteria"}):  # Only evaluate badges with criteria
+        criteria = badge["criteria"]
+        # Replace placeholders with actual values
+        criteria = criteria.replace("activities_completed", str(len(user_activities)))
+        criteria = criteria.replace("consecutive_days", str(consecutive_days))
+        criteria = criteria.replace("daily_calories_burned", str(daily_calories_burned))
+
+        try:
+            if eval(criteria, {"__builtins__": None}):  # Evaluate criteria safely
+                # Avoid duplicate badge assignments
+                existing_badge = badges_collection.find_one({"user_id": user_id, "badge_id": badge["_id"]})
+                if not existing_badge:
+                    badges_collection.insert_one({"user_id": user_id, "badge_id": badge["_id"], "assigned_on": datetime.now()})
+        except Exception as e:
+            print(f"Error evaluating badge criteria: {e}")
+
+def create_badge(badge_data):
+    badges_collection = tracker_db.badges
+    badges_collection.insert_one(badge_data)
+
+def retrieve_badges():
+    badges_collection = tracker_db.badges
+    badges = list(badges_collection.find())
+    return badges
+
+def retrieve_badges_by_user_id(user_id):
+    badges_collection = tracker_db.badges
+    badges = list(badges_collection.find({'user_id': user_id}))
+    return badges
+

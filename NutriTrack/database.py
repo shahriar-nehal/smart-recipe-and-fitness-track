@@ -312,8 +312,6 @@ def update_user(user_id, updated_data):
         {"$set": updated_data}
     )
 
-from datetime import datetime, timedelta
-
 def get_total_calories_burned1(user_id, current_date):
     activity_logs_collection = tracker_db.activity_logs
     # Convert current_date to datetime with start and end of the day
@@ -367,6 +365,7 @@ def assign_badges(user_id):
     """Assign badges to a user based on activity logs and criteria."""
     activity_log_collection = tracker_db.activity_log
     badges_collection = tracker_db.badges
+    badges_log_collection = tracker_db.badges_log
     user_activities = list(activity_log_collection.find({"user_id": user_id}))
     consecutive_days = check_consecutive_days(user_activities)
     current_date = datetime.today().date()
@@ -382,9 +381,9 @@ def assign_badges(user_id):
         try:
             if eval(criteria, {"__builtins__": None}):  # Evaluate criteria safely
                 # Avoid duplicate badge assignments
-                existing_badge = badges_collection.find_one({"user_id": user_id, "badge_id": badge["_id"]})
+                existing_badge = badges_log_collection.find_one({"user_id": user_id, "badge_id": badge["_id"]})
                 if not existing_badge:
-                    badges_collection.insert_one({"user_id": user_id, "badge_id": badge["_id"], "assigned_on": datetime.now()})
+                    badges_log_collection.insert_one({"user_id": user_id, "badge_id": badge["_id"], "assigned_on": datetime.now()})
         except Exception as e:
             print(f"Error evaluating badge criteria: {e}")
 
@@ -398,7 +397,6 @@ def retrieve_badges():
     return badges
 
 def retrieve_badges_by_user_id(user_id):
-    badges_collection = tracker_db.badges
-    badges = list(badges_collection.find({'user_id': user_id}))
+    badges_log_collection = tracker_db.badges_log
+    badges = list(badges_log_collection.find({'user_id': user_id}))
     return badges
-

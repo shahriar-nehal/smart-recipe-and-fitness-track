@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Earned Badges{% endblock %}
+{% block content %}
+    <div class="container mt-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="display-4">Earned Badges</h1>
+        </div>
+        {% if badges %}
+            <div class="row">
+                {% for badge in badges %}
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body">
+                            <h5 class="card-title text-primary">
+                                <i class="bi bi-award-fill"></i> {{ badge.name }}
+                            </h5>
+                            <p class="card-text text-secondary">
+                                <strong>Description:</strong> {{ badge.description }}
+                            </p>
+                            <p class="card-text">
+                                <strong>Earned on: </strong> <code>{{ badge.assigned_on }}</code>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info text-center" role="alert">
+                <i class="bi bi-info-circle"></i> No badges created yet. Start by adding one!
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

@@ -128,8 +128,9 @@ def get_activity_logs():
     
     # Retrieve activity logs for the logged-in user
     activity_logs = database.retrieve_activity_logs(user_id)
-    badges = database.retrieve_badges_by_user_id(user_id)
-    return render_template("activity_log.html", activity_logs=activity_logs, badges=badges)
+    #badges = database.retrieve_badges_by_user_id(user_id)
+    earned_badges = database.get_earned_badges(user_id)
+    return render_template("activity_log.html", activity_logs=activity_logs, badges=earned_badges)
 
 
 @app.route("/create_activity_log", methods=["GET", "POST"])
@@ -633,6 +634,13 @@ def get_post_create_badge():
 
     return render_template("create_badge.html")
 
+@app.route('/badges/<user_id>')
+def show_badges(user_id):
+    # Fetch earned badges for the user
+    earned_badges = database.get_earned_badges(user_id)
+
+    # Pass earned badges to the HTML template
+    return render_template('badge_earned.html', badges=earned_badges)
 
 
 @app.route('/dashboard')

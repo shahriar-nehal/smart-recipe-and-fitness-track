@@ -4,6 +4,7 @@ from pprint import pprint
 from bson.objectid import ObjectId
 
 #from mongita import MongitaClientDisk
+from flask import jsonify
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 
@@ -312,21 +313,25 @@ def update_user(user_id, updated_data):
         {"$set": updated_data}
     )
 
-def get_total_calories_burned1(user_id, current_date):
-    activity_logs_collection = tracker_db.activity_logs
-    # Convert current_date to datetime with start and end of the day
-    start_of_day = datetime.combine(current_date, datetime.min.time())
-    end_of_day = start_of_day + timedelta(days=1) - timedelta(seconds=1)
 
-    # Query MongoDB for activity logs within this date range
+def get_total_calories_burned1(user_id, date):
+    activity_logs_collection = tracker_db.activity_log
+    
+    # Convert date to datetime string for comparison
+    date_str = date.strftime('%Y-%m-%d')
+    
     activity_logs = activity_logs_collection.find({
-        "user_id": user_id,
-        "timestamp": {"$gte": start_of_day, "$lte": end_of_day}
+        'user_id': user_id,
+        'date': date_str
     })
 
-    # Sum up calories burned from the logs
     total_calories_burned = sum(log['calories_burned'] for log in activity_logs)
+    print(f"Total Calories Burned on {date_str}: {total_calories_burned}")
     return total_calories_burned
+
+
+
+
 
 
 def check_consecutive_days(user_activities):
@@ -362,30 +367,64 @@ def check_consecutive_days(user_activities):
 
 
 def assign_badges(user_id):
-    """Assign badges to a user based on activity logs and criteria."""
+    """
+    Assign badges to a user based on activity logs and criteria.
+    """
     activity_log_collection = tracker_db.activity_log
     badges_collection = tracker_db.badges
     badges_log_collection = tracker_db.badges_log
+
+    # Fetch user activities
     user_activities = list(activity_log_collection.find({"user_id": user_id}))
     consecutive_days = check_consecutive_days(user_activities)
-    current_date = datetime.today().date()
-    daily_calories_burned = get_total_calories_burned1(user_id, current_date)
+    print(f"Consecutive Days: {consecutive_days}")
 
-    for badge in badges_collection.find({"type": "criteria"}):  # Only evaluate badges with criteria
+    # Fetch today's date and calculate daily calories burned
+    current_date = datetime.today().date()
+    print(f"Current Date: {current_date}")
+    daily_calories_burned = get_total_calories_burned1(user_id, current_date)
+    print(f"Daily Calories Burned: {daily_calories_burned}")
+
+    # Add a helper to calculate total calories across all activities
+    total_calories_burned = sum(activity.get("calories_burned", 0) for activity in user_activities)
+    print(f"Total Calories Burned: {total_calories_burned}")
+
+    # Iterate through badges with criteria
+    for badge in badges_collection.find({"type": "criteria"}):  # Only evaluate criteria badges
         criteria = badge["criteria"]
+
         # Replace placeholders with actual values
         criteria = criteria.replace("activities_completed", str(len(user_activities)))
         criteria = criteria.replace("consecutive_days", str(consecutive_days))
         criteria = criteria.replace("daily_calories_burned", str(daily_calories_burned))
+        criteria = criteria.replace(
+            "sum(activity['calories_burned'] for activity in user_activities)",
+            str(total_calories_burned)
+        )
 
         try:
-            if eval(criteria, {"__builtins__": None}):  # Evaluate criteria safely
-                # Avoid duplicate badge assignments
-                existing_badge = badges_log_collection.find_one({"user_id": user_id, "badge_id": badge["_id"]})
+            # Evaluate the criteria safely with allowed built-ins
+            if eval(criteria, {"__builtins__": None}, {"sum": sum, "user_activities": user_activities}):
+                # Check if the badge has already been assigned
+                existing_badge = badges_log_collection.find_one({
+                    "user_id": user_id,
+                    "badge_id": badge["_id"]
+                })
+
                 if not existing_badge:
-                    badges_log_collection.insert_one({"user_id": user_id, "badge_id": badge["_id"], "assigned_on": datetime.now()})
+                    # Assign the badge and log the assignment
+                    badges_log_collection.insert_one({
+                        "user_id": user_id,
+                        "badge_id": badge["_id"],
+                        "assigned_on": datetime.now()
+                    })
+                    print(f"Badge '{badge['name']}' assigned to user {user_id}.")
+                else:
+                    print(f"Badge '{badge['name']}' already assigned.")
         except Exception as e:
-            print(f"Error evaluating badge criteria: {e}")
+            print(f"Error evaluating badge criteria for '{badge['name']}': {e}")
+
+
 
 def create_badge(badge_data):
     badges_collection = tracker_db.badges
@@ -400,3 +439,30 @@ def retrieve_badges_by_user_id(user_id):
     badges_log_collection = tracker_db.badges_log
     badges = list(badges_log_collection.find({'user_id': user_id}))
     return badges
+
+from bson import ObjectId
+
+def get_earned_badges(user_id):
+    """
+    Fetch all badges earned by a user.
+    """
+    badges_log_collection = tracker_db.badges_log
+    badges_collection = tracker_db.badges
+
+    # Fetch earned badge IDs for the user
+    earned_badges = list(badges_log_collection.find({"user_id": user_id}))
+
+    # Map to full badge details
+    badge_ids = [badge_log['badge_id'] for badge_log in earned_badges]
+    badges = list(badges_collection.find({"_id": {"$in": badge_ids}}))
+
+    # Format the response
+    response = []
+    for badge in badges:
+        response.append({
+            "name": badge.get("name"),
+            "description": badge.get("description"),
+            "assigned_on": next((log["assigned_on"] for log in earned_badges if log["badge_id"] == badge["_id"]), None)
+        })
+
+    return list(response)

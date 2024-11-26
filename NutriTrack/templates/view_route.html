@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}View Route{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>View Route</h1>
+    <div id="map"></div>
+</div>
+
+<style>
+    #map { 
+        height: 400px; 
+        width: 100%; 
+        margin-top: 10px; 
+    }
+</style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<!-- Make sure you put this AFTER Leaflet's CSS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+    // Initialize the map
+    var map = L.map('map');
+    
+    {% if start_coords and end_coords %}
+    var startCoords = {{ start_coords|tojson }};
+    var endCoords = {{ end_coords|tojson }};
+    
+    // Set the map view to the start location
+    map.setView(startCoords, 13); // Adjust the zoom level as needed
+
+    // Add start and end markers
+    L.marker(startCoords).addTo(map).bindPopup('Start').openPopup();
+    L.marker(endCoords).addTo(map).bindPopup('End').openPopup();
+    
+    // Draw a polyline between start and end
+    L.polyline([startCoords, endCoords], {color: 'blue'}).addTo(map);
+    
+    {% else %}
+    map.setView([51.505, -0.09], 13); // Default location and zoom level
+    {% endif %}
+    
+    // Add a tile layer to the map
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+</script>
+{% endblock %}

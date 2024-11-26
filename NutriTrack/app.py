@@ -120,6 +120,7 @@ def get_post_login_user():
             error = "Invalid email or password"
             return render_template("login.html", error=error)
     return render_template("login.html")
+
 @app.route("/activities_log")
 def get_activity_logs():
     user_id = session.get("user_id")  # Retrieve user ID from session
@@ -128,7 +129,6 @@ def get_activity_logs():
     
     # Retrieve activity logs for the logged-in user
     activity_logs = database.retrieve_activity_logs(user_id)
-    #badges = database.retrieve_badges_by_user_id(user_id)
     earned_badges = database.get_earned_badges(user_id)
     return render_template("activity_log.html", activity_logs=activity_logs, badges=earned_badges)
 
@@ -144,6 +144,10 @@ def get_post_create_activity_log():
         duration = request.form.get("duration")
         date = request.form.get("date")
         time = request.form.get("time")
+        start_latitude = request.form.get("start_latitude")
+        start_longitude = request.form.get("start_longitude")
+        end_latitude = request.form.get("end_latitude")
+        end_longitude = request.form.get("end_longitude")
 
         # Validate inputs
         if not activity_id or not duration:
@@ -188,6 +192,10 @@ def get_post_create_activity_log():
             "calories_burned": calories_burned,
             "date": date,
             "time":time,
+            "start_latitude": float(start_latitude) if start_latitude else None,
+            "start_longitude": float(start_longitude) if start_longitude else None,
+            "end_latitude": float(end_latitude) if end_latitude else None,
+            "end_longitude": float(end_longitude) if end_longitude else None,
             "activity_name": activity["name"],
             "bmi": bmi,
         }
@@ -200,6 +208,21 @@ def get_post_create_activity_log():
     activities = database.retrieve_activities()
     return render_template("create_activity_log.html", activities=activities)
 
+@app.route('/view_route/<log_id>')
+def view_route(log_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("get_post_login_user"))
+    log = database.get_activity_log_by_id(log_id, user_id)
+    if not log:
+        flash("Activity log not found.", "error")
+        return redirect(url_for('get_activity_logs'))
+    
+    start_coords = (log['start_latitude'], log['start_longitude']) if log['start_latitude'] and log['start_longitude'] else None
+    end_coords = (log['end_latitude'], log['end_longitude']) if log['end_latitude'] and log['end_longitude'] else None
+    
+    return render_template('view_route.html', start_coords=start_coords, end_coords=end_coords)
+
 
 @app.route("/update_activity_log/<log_id>", methods=["GET", "POST"])
 def update_activity_log(log_id):
@@ -207,42 +230,79 @@ def update_activity_log(log_id):
     if not user_id:
         return redirect(url_for("get_post_login_user"))
 
-    if request.method == "POST":
-        activity_id = request.form["activity_id"]
-        duration = float(request.form["duration"])
-
-        # Validate activity_id
-        try:
-            activity = database.get_activity_by_id(ObjectId(activity_id))
-        except errors.InvalidId:
-            flash("Invalid activity selection!", "error")
-            return redirect(url_for("update_activity_log", log_id=log_id))
-
-        if not activity:
-            flash("Selected activity does not exist!", "error")
-            return redirect(url_for("update_activity_log", log_id=log_id))
-
-        # Recalculate calories burned
-        user = database.retrieve_user_by_id(user_id)
-        weight_kg = user.get("weight")
-        met_value = activity["met_value"]
-        calories_burned = met_value * weight_kg * (duration / 60)
-
-        updated_activity_log = {
-            "activity_id": activity_id,
-            "duration": duration,
-            "calories_burned": calories_burned,
-            "date": request.form["date"],
-            "time": request.form["time"],
-            "activity_name": activity["name"],
-            "bmi": user.get("bmi"),
-        }
-        database.update_activity_log(log_id, updated_activity_log, user_id)
+    log = database.get_activity_log_by_id(log_id,user_id)
+    if not log:
+        flash("Activity log not found.", "error")
         return redirect(url_for("get_activity_logs"))
 
-    activity_log = database.get_activity_log_by_id(log_id, user_id)
+    if request.method == "POST":
+        activity_id = request.form.get("activity_id")
+        duration = request.form.get("duration")
+        date = request.form.get("date")
+        time = request.form.get("time")
+        start_latitude = request.form.get("start_latitude")
+        start_longitude = request.form.get("start_longitude")
+        end_latitude = request.form.get("end_latitude")
+        end_longitude = request.form.get("end_longitude")
+
+        # Validate inputs
+        if not activity_id or not duration:
+            flash("Please fill all fields!", "error")
+            return redirect(url_for("update_activity_log", log_id=log_id))
+
+        try:
+            # Ensure the activity_id is a valid ObjectId
+            activity_id = ObjectId(activity_id)
+        except InvalidId:
+            flash("Invalid activity selected. Please try again.", "error")
+            return redirect(url_for("update_activity_log", log_id=log_id))
+
+        try:
+            duration = float(duration)  # Convert duration to float
+        except ValueError:
+            flash("Invalid duration. Please enter a valid number.", "error")
+            return redirect(url_for("update_activity_log", log_id=log_id))
+
+        # Get user information
+        user = database.retrieve_user_by_id(user_id)
+        weight_kg = user.get("weight")
+        height_m = user.get("height") / 100  # Convert cm to meters
+        bmi = weight_kg / (height_m ** 2)
+
+        # Get activity MET value
+        activity = database.get_activity_by_id(activity_id)
+        if not activity:
+            flash("Activity not found. Please try again.", "error")
+            return redirect(url_for("update_activity_log", log_id=log_id))
+
+        met_value = activity["met_value"]
+
+        # Calculate calories burned
+        calories_burned = met_value * weight_kg * (duration / 60)
+
+        # Update the activity log
+        updated_activity_log = {
+            "user_id": user_id,
+            "activity_id": str(activity_id),
+            "duration": duration,
+            "calories_burned": calories_burned,
+            "date": date,
+            "time": time,
+            "start_latitude": float(start_latitude) if start_latitude else None,
+            "start_longitude": float(start_longitude) if start_longitude else None,
+            "end_latitude": float(end_latitude) if end_latitude else None,
+            "end_longitude": float(end_longitude) if end_longitude else None,
+            "activity_name": activity["name"],
+            "bmi": bmi,
+        }
+        database.update_activity_log(log_id, updated_activity_log,user_id)
+        flash("Activity log updated successfully!", "success")
+        return redirect(url_for("get_activity_logs"))
+
+    # Retrieve activities for the dropdown
     activities = database.retrieve_activities()
-    return render_template("update_activity_log.html", activity_log=activity_log, activities=activities)
+    return render_template("update_activity_log.html", log=log, activities=activities)
+
 
 
 @app.route("/delete_activity_log/<log_id>", methods=["POST"])

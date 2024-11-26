@@ -15,6 +15,8 @@
                 <th scope="col">Date</th>
                 <th scope="col">Time</th>
                 <th scope="col">BMI</th>
+                <th scope="col">Start Location (Lat, Lon)</th>
+                <th scope="col">End Location (Lat, Lon)</th>
                 <th scope="col">Actions</th>
             </tr>
         </thead>
@@ -23,15 +25,18 @@
             <tr>
                 <td>{{ log.activity_name }}</td>
                 <td>{{ log.duration }}</td>
-                <td>{{ "%.2f"|format(log.calories_burned) }}
+                <td>{{ "%.2f"|format(log.calories_burned) }}</td>
                 <td>{{ log.date }}</td>
                 <td>{{ log.time }}</td>
                 <td>{{ "%.2f"|format(log.bmi) }}</td>
+                <td>{{ log.start_latitude }}, {{ log.start_longitude }}</td>
+                <td>{{ log.end_latitude }}, {{ log.end_longitude }}</td>
                 <td>
                     <form action="{{ url_for('delete_activity_log', log_id=log['_id']) }}" method="POST" style="display: inline;">
                         <button type="submit" class="btn btn-danger btn-sm">Delete</button>
                     </form>
                     <a href="{{ url_for('update_activity_log', log_id=log['_id']) }}" class="btn btn-warning btn-sm">Edit</a>
+                    <a href="{{ url_for('view_route', log_id=log['_id']) }}" class="btn btn-info btn-sm">View Route</a>
                 </td>
             </tr>
             {% endfor %}

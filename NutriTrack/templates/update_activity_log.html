@@ -5,28 +5,143 @@
 {% block content %}
 <div class="container mt-5">
     <h1>Update Activity Log</h1>
-    <form action="{{ url_for('update_activity_log', log_id=activity_log['_id']) }}" method="POST">
+    <form action="{{ url_for('update_activity_log', log_id=log['_id']) }}" method="POST">
         <div class="form-group">
             <label for="activity_id">Activity</label>
-            <select class="form-control" id="activity_id" name="activity_id">
+            <select class="form-control" id="activity_id" name="activity_id" required>
                 {% for activity in activities %}
-                <option value="{{ activity_log.activity_id }}" {% if activity.id == activity_log.activity_id %}selected{% endif %}>{{ activity.name }}</option>
+                <option value="{{ activity._id }}" {% if activity._id == log.activity_id %}selected{% endif %}>{{ activity.name }}</option>
                 {% endfor %}
             </select>
         </div>
         <div class="form-group">
             <label for="duration">Duration (minutes)</label>
-            <input type="number" class="form-control" id="duration" name="duration" value="{{ activity_log.duration }}" required>
+            <input type="number" class="form-control" id="duration" name="duration" value="{{ log.duration }}" required />
         </div>
         <div class="form-group">
             <label for="date">Date</label>
-            <input type="date" class="form-control" id="date" name="date" value="{{ activity_log.date }}" required>
+            <input type="date" class="form-control" id="date" name="date" value="{{ log.date }}" required />
         </div>
         <div class="form-group">
             <label for="time">Time</label>
-            <input type="time" class="form-control" id="time" name="time" value="{{ activity_log.time }}" required>
+            <input type="time" class="form-control" id="time" name="time" value="{{ log.time }}" required />
         </div>
-        <button type="submit" class="btn btn-primary">Update</button>
+        <div class="form-group mt-3">
+            <label for="start_latitude">Start Latitude (optional):</label>
+            <input type="text" class="form-control" id="start_latitude" name="start_latitude" value="{{ log.start_latitude }}" />
+        </div>
+        <div class="form-group">
+            <label for="start_longitude">Start Longitude (optional):</label>
+            <input type="text" class="form-control" id="start_longitude" name="start_longitude" value="{{ log.start_longitude }}" />
+        </div>
+        <div class="form-group">
+            <label for="end_latitude">End Latitude (optional):</label>
+            <input type="text" class="form-control" id="end_latitude" name="end_latitude" value="{{ log.end_latitude }}" />
+        </div>
+        <div class="form-group">
+            <label for="end_longitude">End Longitude (optional):</label>
+            <input type="text" class="form-control" id="end_longitude" name="end_longitude" value="{{ log.end_longitude }}" />
+        </div>
+        <div id="map"></div>
+        <button type="submit" class="btn btn-primary">Update Activity</button>
     </form>
 </div>
+
+<style>
+    #map { 
+        height: 360px; 
+        width: 100%; 
+        margin-top: 10px; 
+    }
+</style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+    // Initialize the map
+    var map = L.map('map');
+    
+    // Function to handle success in getting geolocation
+    function onLocationFound(e) {
+        var lat = e.latitude;
+        var lng = e.longitude;
+
+        map.setView([lat, lng], 13); // Set the map view to the current location
+        L.marker([lat, lng]).addTo(map).bindPopup('Your Current Location').openPopup();
+    }
+    
+    // Function to handle error in getting geolocation
+    function onLocationError(e) {
+        console.log(e.message);
+        map.setView([51.505, -0.09], 13); // Default location and zoom level
+    }
+    
+    // Get current location if possible
+    map.on('locationfound', onLocationFound);
+    map.on('locationerror', onLocationError);
+    map.locate({setView: true, maxZoom: 16});
+    
+    // Add a tile layer to the map
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    var startMarker, endMarker, polyline;
+
+    // Display existing start and end markers if available
+    {% if log.start_latitude and log.start_longitude %}
+    var startLatLng = L.latLng({{ log.start_latitude }}, {{ log.start_longitude }});
+    startMarker = L.marker(startLatLng).addTo(map).bindPopup('Start').openPopup();
+    map.setView(startLatLng, 13);
+    {% endif %}
+
+    {% if log.end_latitude and log.end_longitude %}
+    var endLatLng = L.latLng({{ log.end_latitude }}, {{ log.end_longitude }});
+    endMarker = L.marker(endLatLng).addTo(map).bindPopup('End').openPopup();
+    {% if log.start_latitude and log.start_longitude %}
+    polyline = L.polyline([startLatLng, endLatLng], {color: 'blue'}).addTo(map);
+    {% endif %}
+    {% endif %}
+
+    // Function to handle map clicks
+    map.on('click', function(e) {
+        var lat = e.latlng.lat;
+        var lng = e.latlng.lng;
+
+        if (startMarker === undefined || document.getElementById('start_latitude').value) {
+            document.getElementById('start_latitude').value = lat;
+            document.getElementById('start_longitude').value = lng;
+            if (startMarker) {
+                map.removeLayer(startMarker);
+            }
+            startMarker = L.marker([lat, lng]).addTo(map).bindPopup('Start').openPopup();
+        } else {
+            document.getElementById('end_latitude').value = lat;
+            document.getElementById('end_longitude').value = lng;
+            if (endMarker) {
+                map.removeLayer(endMarker);
+            }
+            endMarker = L.marker([lat, lng]).addTo(map).bindPopup('End').openPopup();
+
+            // Remove existing polyline if any
+            if (polyline) {
+                map.removeLayer(polyline);
+            }
+            // Draw a polyline between start and end
+            var startLatLng = L.latLng(document.getElementById('start_latitude').value, document.getElementById('start_longitude').value);
+            var endLatLng = L.latlng(lat, lng);
+            polyline = L.polyline([startLatLng, endLatLng], {color: 'blue'}).addTo(map);
+        }
+    });
+
+    // Ensure the map container is resized correctly
+    function resizeMap() {
+        setTimeout(function() {
+            map.invalidateSize();
+        }, 400);
+    }
+
+    // Call resizeMap when the page is loaded and when the window is resized
+    window.addEventListener('load', resizeMap);
+    window.addEventListener('resize', resizeMap);
+</script>
 {% endblock %}

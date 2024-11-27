@@ -86,6 +86,7 @@
     }).addTo(map);
 
     var startMarker, endMarker, polyline;
+    var clickCount = 0;
 
     // Display existing start and end markers if available
     {% if log.start_latitude and log.start_longitude %}
@@ -107,7 +108,8 @@
         var lat = e.latlng.lat;
         var lng = e.latlng.lng;
 
-        if (startMarker === undefined || document.getElementById('start_latitude').value) {
+        if (clickCount % 2 === 0) {
+            // Update start position
             document.getElementById('start_latitude').value = lat;
             document.getElementById('start_longitude').value = lng;
             if (startMarker) {
@@ -115,6 +117,7 @@
             }
             startMarker = L.marker([lat, lng]).addTo(map).bindPopup('Start').openPopup();
         } else {
+            // Update end position
             document.getElementById('end_latitude').value = lat;
             document.getElementById('end_longitude').value = lng;
             if (endMarker) {
@@ -131,6 +134,7 @@
             var endLatLng = L.latlng(lat, lng);
             polyline = L.polyline([startLatLng, endLatLng], {color: 'blue'}).addTo(map);
         }
+        clickCount++;
     });
 
     // Ensure the map container is resized correctly

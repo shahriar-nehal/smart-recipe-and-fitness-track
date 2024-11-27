@@ -715,6 +715,12 @@ def dashboard():
 
     return render_template('dashboard.html', user=user)
 
+@app.route('/about')
+def about():
+    current_date = datetime.datetime.now().strftime("%B %d, %Y")
+    return render_template('about.html', date=current_date)
+
+
 @app.route("/logout")
 def logout():
     session.clear()  # Clear the session

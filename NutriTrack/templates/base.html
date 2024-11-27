@@ -42,6 +42,7 @@
                         {% if 'username' in session %}
                         <li class="nav-item"><a class="nav-link" href="/dashboard">Dashboard</a></li>
                         <li class="nav-item"><a class="nav-link" href="/profile">{{ session['username'] }}</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/about">About Us</a></li>
                         <li class="nav-item"><a class="nav-link" href="/logout">Logout</a></li>
                         {% else %}
                         <li class="nav-item"><a class="nav-link" href="/recipes">Recipes</a></li>

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}About Us{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card mb-3">
+        <div class="row no-gutters">
+            <div class="col-md-4">
+                <img src="https://dataedo-website.s3.amazonaws.com/cartoon/funny_story-1.png?1649036915" class="card-img" alt="About Us Image">
+            </div>
+            <div class="col-md-8">
+                <div class="card-body">
+                    <h1 class="card-title">About Us</h1>
+                    <p class="card-text">This is a web application for tracking nutrition and fitness.</p>
+                    <p class="card-text">It is built using Flask and MongoDB.</p>
+                    <p class="card-text">It was created by 
+                        <ul>
+                            <li><a href="https://github.com/shahriar-nehal">Shahriar Rahman Khan</a></li> 
+                            <li><a href="https://github.com/dgandi28">Durga Prasad</a></li>
+                            <li><a href="https://github.com/LahariSaiSree-Adsd">Lahari Saisree Kurali</a></li>
+                        </ul>
+                    as a project for the Advanced Database System Design course curriculum.</p>
+                    <p class="card-text"><small class="text-muted">Last updated on {{ date }}</small></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

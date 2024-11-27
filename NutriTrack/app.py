@@ -717,7 +717,7 @@ def dashboard():
 
 @app.route('/about')
 def about():
-    current_date = datetime.datetime.now().strftime("%B %d, %Y")
+    current_date = datetime.now().strftime("%B %d, %Y")
     return render_template('about.html', date=current_date)
 
 

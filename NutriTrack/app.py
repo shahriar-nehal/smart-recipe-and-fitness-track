@@ -762,6 +762,27 @@ def post_answer(question_id):
     database.create_answer(new_answer)
     return redirect(url_for('question_detail', question_id=question_id))
 
+@app.route('/exercises/search', methods=["GET", "POST"])
+def search_exercises():
+    if request.method == "POST":
+        search_type = request.form.get('type')
+        search_muscle_group = request.form.get('muscle_group')
+        search_equipment = request.form.get('equipment')
+
+        query = {}
+        if search_type:
+            query["type"] = search_type
+        if search_muscle_group:
+            query["muscle_group"] = search_muscle_group
+        if search_equipment:
+            query["equipment"] = search_equipment
+
+        exercises = database.search_exercises(query)
+        return render_template('search_results.html', exercises=exercises)
+
+    return render_template('search_exercises.html')
+
+
 
 @app.route('/dashboard')
 def dashboard():

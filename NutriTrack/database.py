@@ -498,3 +498,8 @@ def create_answer(data):
     answers_collection = tracker_db.answers
     answers_collection.insert_one(data)
 
+def search_exercises(data):
+    exercises_collection = tracker_db.exercises
+    exercises = list(exercises_collection.find(data))
+    return exercises
+

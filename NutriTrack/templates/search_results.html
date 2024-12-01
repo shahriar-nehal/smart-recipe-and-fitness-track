@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Search Results</h1>
+    {% if exercises %}
+        <div class="list-group">
+            {% for exercise in exercises %}
+            <div class="list-group-item">
+                <h5 class="mb-1">{{ exercise.name }}</h5>
+                <p class="mb-1">{{ exercise.description }}</p>
+                <small>Type: {{ exercise.type }} | Muscle Group: {{ exercise.muscle_group }} | Equipment: {{ exercise.equipment }}</small>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>No exercises found matching your criteria.</p>
+    {% endif %}
+</div>
+{% endblock %}

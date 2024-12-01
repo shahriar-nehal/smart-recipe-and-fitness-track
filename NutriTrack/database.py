@@ -466,3 +466,35 @@ def get_earned_badges(user_id):
         })
 
     return list(response)
+
+def retrieve_questions():
+    questions_collection = tracker_db.questions
+    questions = list(questions_collection.find().sort("timestamp", -1))
+    return questions
+
+def create_question(data):
+    questions_collection = tracker_db.questions
+    questions_collection.insert_one(data)
+
+def retrieve_question_by_id(question_id):
+    questions_collection = tracker_db.questions
+    question = questions_collection.find_one({"_id": ObjectId(question_id)})
+    return question
+
+def delete_question(question_id):
+    questions_collection = tracker_db.questions
+    questions_collection.delete_one({"_id": ObjectId(question_id)})
+
+def update_question(question_id, updated_data):
+    questions_collection = tracker_db.questions
+    questions_collection.update_one({"_id": ObjectId(question_id)}, {"$set": updated_data})
+
+def retrieve_answers_by_question_id(question_id):
+    answers_collection = tracker_db.answers
+    answers = list(answers_collection.find({"question_id": ObjectId(question_id)}).sort("timestamp", -1))
+    return answers
+
+def create_answer(data):
+    answers_collection = tracker_db.answers
+    answers_collection.insert_one(data)
+

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Forum{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Forum</h1>
+    <a href="{{ url_for('ask_question') }}" class="btn btn-primary">Ask a Question</a>
+    <div class="mt-3">
+        {% for question in questions %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title"><a href="{{ url_for('question_detail', question_id=question._id) }}">{{ question.title }}</a></h5>
+                <p class="card-text">{{ question.content }}</p>
+                <p class="card-text"><small class="text-muted">{{ question.timestamp }}</small></p>
+                <div class="tags">
+                    {% for tag in question.tags %}
+                    <span class="badge badge-info">{{ tag }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

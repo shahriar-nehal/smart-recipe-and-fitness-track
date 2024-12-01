@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Question Detail{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>{{ question.title }}</h1>
+    <p>{{ question.content }}</p>
+    <p><small class="text-muted">Asked on {{ question.timestamp }}</small></p>
+    <div class="tags">
+        {% for tag in question.tags %}
+        <span class="badge badge-info">{{ tag }}</span>
+        {% endfor %}
+    </div>
+    <hr>
+    <h2>Answers</h2>
+    <div>
+        {% for answer in answers %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <p>{{ answer.content }}</p>
+                <p><small class="text-muted">Answered on {{ answer.timestamp }}</small></p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <hr>
+    <h2>Your Answer</h2>
+    <form action="{{ url_for('post_answer', question_id=question._id) }}" method="POST">
+        <div class="form-group">
+            <textarea class="form-control" id="content" name="content" rows="5" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Submit Answer</button>
+    </form>
+</div>
+{% endblock %}

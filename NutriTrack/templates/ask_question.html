@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Ask a Question{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Create a Post, fellow fitness enthusiast {{session.username}}! </h1>
+    <form action="{{ url_for('ask_question') }}" method="POST">
+        <div class="form-group">
+            <label for="title">Title</label>
+            <input type="text" class="form-control" id="title" name="title" required>
+        </div>
+        <div class="form-group">
+            <label for="content">Content</label>
+            <textarea class="form-control" id="content" name="content" rows="5" required></textarea>
+        </div>
+        <div class="form-group">
+            <label for="tags">Tags</label>
+            <div class="row">
+                <div class="col-md-4">
+                    <label for="nutrition_tags">Nutrition Tags</label>
+                    <select class="form-control" id="nutrition_tags" name="tags">
+                        <option value="Healthy Eating">Healthy Eating</option>
+                        <option value="Diet Plans">Diet Plans</option>
+                        <option value="Recipes">Recipes</option>
+                        <option value="Vegetarian">Vegetarian</option>
+                        <option value="Vegan">Vegan</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="fitness_tags">Fitness Tags</label>
+                    <select class="form-control" id="fitness_tags" name="tags">
+                        <option value="Workouts">Workouts</option>
+                        <option value="Strength Training">Strength Training</option>
+                        <option value="Cardio">Cardio</option>
+                        <option value="Yoga">Yoga</option>
+                        <option value="HIIT">HIIT</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="wellness_tags">General Wellness Tags</label>
+                    <select class="form-control" id="wellness_tags" name="tags">
+                        <option value="Motivation">Motivation</option>
+                        <option value="Mental Health">Mental Health</option>
+                        <option value="Sleep">Sleep</option>
+                        <option value="Stress Management">Stress Management</option>
+                        <option value="Habit Building">Habit Building</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3">Submit</button>
+    </form>
+</div>
+{% endblock %}

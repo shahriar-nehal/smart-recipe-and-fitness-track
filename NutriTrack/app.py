@@ -702,6 +702,66 @@ def show_badges(user_id):
     # Pass earned badges to the HTML template
     return render_template('badge_earned.html', badges=earned_badges)
 
+# Main Forum Page
+@app.route('/forum')
+def forum():
+    questions = database.retrieve_questions()
+    return render_template('forum.html', questions=questions)
+
+# Individual Question Page
+@app.route('/forum/question/<question_id>')
+def question_detail(question_id):
+    question = database.retrieve_question_by_id(question_id)
+    answers = database.retrieve_answers_by_question_id(question_id)
+    return render_template('question_detail.html', question=question, answers=answers)
+
+# Post a Question
+@app.route('/forum/ask', methods=["GET", "POST"])
+def ask_question():
+    if request.method == "POST":
+        title = request.form.get('title')
+        content = request.form.get('content')
+        tags = request.form.getlist('tags')
+        user_id = session.get('user_id')
+
+        if not user_id:
+            flash("You need to be logged in to ask a question.", "error")
+            return redirect(url_for('login'))
+
+        new_question = {
+            "title": title,
+            "content": content,
+            "tags": tags,
+            "user_id": user_id,
+            "timestamp": datetime.now(),
+            "answers": []
+        }
+        database.create_question(new_question)
+        return redirect(url_for('forum'))
+
+    return render_template('ask_question.html')
+
+
+# Post an Answer
+@app.route('/forum/question/<question_id>/answer', methods=["POST"])
+def post_answer(question_id):
+    content = request.form.get('content')
+    user_id = session.get('user_id')
+
+    if not user_id:
+        flash("You need to be logged in to answer a question.", "error")
+        return redirect(url_for('login'))  # Assuming there's a login route
+
+    new_answer = {
+        "question_id": ObjectId(question_id),
+        "content": content,
+        "user_id": user_id,
+        "timestamp": datetime.now(),
+        "comments": []
+    }
+    database.create_answer(new_answer)
+    return redirect(url_for('question_detail', question_id=question_id))
+
 
 @app.route('/dashboard')
 def dashboard():

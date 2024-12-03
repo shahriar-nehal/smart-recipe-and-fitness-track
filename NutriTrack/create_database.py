@@ -1,11 +1,14 @@
 from pprint import pprint
+from flask import json
 import pymongo
 from bson.objectid import ObjectId
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 
-uri = "mongodb+srv://srahmank:Mistcse55@pets.eec57.mongodb.net/?retryWrites=true&w=majority&appName=pets"
+with open("private.json","r") as f:
+    private = json.load(f)
 
+uri = private["MONGO_ATLAS_URI"]
 # Create a new client and connect to the server
 client = MongoClient(uri, server_api=ServerApi('1'))
 
